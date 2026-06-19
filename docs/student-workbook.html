@@ -1,0 +1,672 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 1 — Student Workbook | Docker &amp; Docker Compose</title>
+<style>
+/* ── Reset & Base ─────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 10.5pt; }
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, Arial, sans-serif;
+  color: #1e293b;
+  line-height: 1.65;
+  background: #fff;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem 2.5rem 4rem;
+}
+
+/* ── Typography ───────────────────────────────────────────────────────────── */
+h1 { font-size: 2.1rem; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; margin-bottom: 0.2rem; }
+h2 { font-size: 1.35rem; font-weight: 700; color: #0f172a; margin: 2.4rem 0 0.7rem;
+     border-bottom: 2.5px solid #2563eb; padding-bottom: 0.3rem; }
+h3 { font-size: 1.05rem; font-weight: 700; color: #1e40af; margin: 1.6rem 0 0.5rem; }
+h4 { font-size: 0.95rem; font-weight: 700; color: #374151; margin: 1.2rem 0 0.4rem;
+     text-transform: uppercase; letter-spacing: 0.05em; }
+p { margin-bottom: 0.75rem; }
+strong { color: #0f172a; }
+em { color: #475569; }
+a { color: #2563eb; }
+
+/* ── Cover Page ───────────────────────────────────────────────────────────── */
+.cover {
+  min-height: 100vh;
+  display: flex; flex-direction: column; justify-content: center;
+  border-left: 6px solid #2563eb;
+  padding: 3rem 2.5rem;
+  margin: -2rem -2.5rem 3rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%);
+}
+.cover-label { font-size: 0.8rem; font-weight: 700; color: #2563eb; text-transform: uppercase;
+               letter-spacing: 0.15em; margin-bottom: 0.75rem; }
+.cover h1 { font-size: 2.6rem; line-height: 1.15; margin-bottom: 0.5rem; }
+.cover-sub { font-size: 1.15rem; color: #475569; margin-bottom: 2.5rem; }
+.cover-meta { display: grid; grid-template-columns: auto 1fr; gap: 0.3rem 1.2rem;
+              font-size: 0.85rem; color: #64748b; }
+.cover-meta strong { color: #1e293b; }
+.cover-outcome {
+  margin-top: 2.5rem; padding: 1.2rem 1.4rem;
+  background: #fff; border: 1.5px solid #bfdbfe; border-radius: 8px;
+}
+.cover-outcome h3 { margin: 0 0 0.6rem; color: #1e40af; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.06em; }
+
+/* ── Code ─────────────────────────────────────────────────────────────────── */
+pre {
+  background: #0f172a; color: #94a3b8;
+  border-radius: 6px; padding: 1rem 1.2rem;
+  font-family: 'Cascadia Code', 'Fira Mono', 'Consolas', monospace;
+  font-size: 0.82rem; line-height: 1.55;
+  overflow-x: auto; margin: 0.8rem 0 1rem;
+  border-left: 3px solid #2563eb;
+}
+code {
+  font-family: 'Cascadia Code', 'Fira Mono', 'Consolas', monospace;
+  font-size: 0.84em; background: #f1f5f9; color: #0f172a;
+  padding: 0.1em 0.35em; border-radius: 3px;
+}
+pre code { background: none; color: inherit; padding: 0; font-size: 1em; }
+
+/* ── Tables ───────────────────────────────────────────────────────────────── */
+table { width: 100%; border-collapse: collapse; margin: 0.8rem 0 1.2rem; font-size: 0.9rem; }
+th { background: #1e40af; color: #fff; text-align: left; padding: 0.5rem 0.75rem; font-weight: 600; }
+td { padding: 0.45rem 0.75rem; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+tr:nth-child(even) td { background: #f8fafc; }
+td code { font-size: 0.8em; }
+
+/* ── Callout Boxes ────────────────────────────────────────────────────────── */
+.callout {
+  border-radius: 6px; padding: 0.9rem 1.1rem; margin: 1rem 0;
+  border-left: 4px solid;
+}
+.callout-concept { background: #eff6ff; border-color: #2563eb; }
+.callout-concept .callout-label { color: #1e40af; }
+.callout-warning { background: #fef2f2; border-color: #ef4444; }
+.callout-warning .callout-label { color: #dc2626; }
+.callout-tip    { background: #f0fdf4; border-color: #10b981; }
+.callout-tip .callout-label    { color: #059669; }
+.callout-label { font-size: 0.72rem; font-weight: 800; text-transform: uppercase;
+                 letter-spacing: 0.1em; margin-bottom: 0.35rem; }
+.callout p:last-child { margin-bottom: 0; }
+
+/* ── Step blocks ──────────────────────────────────────────────────────────── */
+.step {
+  border: 1.5px solid #e2e8f0; border-radius: 8px;
+  margin: 1.5rem 0; overflow: hidden;
+}
+.step-header {
+  background: #1e40af; color: #fff;
+  padding: 0.55rem 1rem;
+  display: flex; align-items: center; gap: 0.7rem;
+  font-weight: 700; font-size: 0.95rem;
+}
+.step-num {
+  background: #fff; color: #1e40af;
+  border-radius: 50%; width: 1.5rem; height: 1.5rem;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.8rem; font-weight: 800; flex-shrink: 0;
+}
+.step-body { padding: 1rem 1.2rem; }
+.step-body p:last-child { margin-bottom: 0; }
+
+/* ── Checklist ────────────────────────────────────────────────────────────── */
+.checklist { list-style: none; padding: 0; }
+.checklist li {
+  padding: 0.35rem 0.5rem; display: flex; align-items: flex-start; gap: 0.6rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+.checklist li::before {
+  content: "☐";
+  color: #94a3b8; font-size: 1.1rem; flex-shrink: 0; margin-top: -0.05rem;
+}
+
+/* ── Interview Q&A ────────────────────────────────────────────────────────── */
+.qa { margin: 1rem 0; }
+.qa-q {
+  background: #1e40af; color: #fff;
+  padding: 0.6rem 1rem; border-radius: 6px 6px 0 0;
+  font-weight: 700; font-size: 0.9rem;
+}
+.qa-a {
+  background: #f8fafc; border: 1.5px solid #bfdbfe;
+  border-top: none; padding: 0.7rem 1rem;
+  border-radius: 0 0 6px 6px; font-size: 0.9rem;
+}
+
+/* ── Section divider ──────────────────────────────────────────────────────── */
+.section-rule { border: none; border-top: 1.5px solid #e2e8f0; margin: 2rem 0; }
+
+/* ── Print styles ─────────────────────────────────────────────────────────── */
+@media print {
+  html { font-size: 9.5pt; }
+  body { max-width: none; padding: 0; margin: 0; }
+  .cover { min-height: auto; page-break-after: always; padding: 2cm 2.5cm; margin: 0 0 0; }
+  h2 { page-break-after: avoid; }
+  h3 { page-break-after: avoid; }
+  .step { page-break-inside: avoid; }
+  .qa  { page-break-inside: avoid; }
+  pre  { page-break-inside: avoid; white-space: pre-wrap; }
+  table { page-break-inside: avoid; }
+  .callout { page-break-inside: avoid; }
+  @page { size: A4; margin: 1.5cm 2cm; }
+  @page :first { margin-top: 0; }
+  a { color: inherit; text-decoration: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="cover-label">ShopList DevOps Training Program</div>
+  <h1>Docker &amp; Docker Compose</h1>
+  <p class="cover-sub">Lecture 1 — Student Workbook</p>
+  <div class="cover-meta">
+    <strong>Duration</strong><span>3 hours</span>
+    <strong>Audience</strong><span>Junior DevOps students — minimal Docker experience</span>
+    <strong>Environment</strong><span>Windows + WSL2 + Docker Desktop</span>
+    <strong>Branch</strong><span><code>feature/lecture-1</code></span>
+  </div>
+  <div class="cover-outcome">
+    <h3>Lecture Outcome (Strict)</h3>
+    <p>By the end of this lecture you will have written <strong>10 files</strong> and have a fully working 3-container application running on your local machine with one command.</p>
+  </div>
+</div>
+
+<!-- WHAT EXISTS AFTER THIS LECTURE -->
+<h2>What Exists After This Lecture</h2>
+<table>
+  <thead><tr><th>File</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td><code>app/backend/app.py</code></td><td>Flask REST API</td></tr>
+    <tr><td><code>app/backend/requirements.txt</code></td><td>Python dependencies</td></tr>
+    <tr><td><code>app/backend/Dockerfile</code></td><td>Backend container definition</td></tr>
+    <tr><td><code>app/frontend/index.html</code></td><td>UI markup</td></tr>
+    <tr><td><code>app/frontend/app.js</code></td><td>UI logic</td></tr>
+    <tr><td><code>app/frontend/style.css</code></td><td>UI styling</td></tr>
+    <tr><td><code>app/frontend/nginx.conf</code></td><td>Nginx config with reverse proxy</td></tr>
+    <tr><td><code>app/frontend/Dockerfile</code></td><td>Frontend container definition</td></tr>
+    <tr><td><code>docker/docker-compose.yml</code></td><td>Multi-container orchestration</td></tr>
+    <tr><td><code>docker/init.sql</code></td><td>Database initialization</td></tr>
+  </tbody>
+</table>
+
+<div class="callout callout-warning">
+  <div class="callout-label">Not In Scope</div>
+  <p>No Kubernetes manifests. No GitLab CI/CD. No Terraform. No Ansible. No cloud infrastructure.</p>
+</div>
+
+<h2>Architecture</h2>
+<pre>Browser → Frontend (Nginx :80) → Backend (Flask :5000) → Database (PostgreSQL :5432)</pre>
+
+<h2>Prerequisites</h2>
+<ul class="checklist">
+  <li>WSL2 with Ubuntu 22.04 installed and opens without error</li>
+  <li>Docker Desktop installed, running, WSL2 integration enabled</li>
+  <li><code>docker --version</code> inside WSL2 shows a version number</li>
+  <li><code>docker compose version</code> inside WSL2 shows a version number</li>
+  <li>VS Code with Remote WSL extension installed</li>
+  <li>Project repo cloned and on branch <code>feature/lecture-1</code></li>
+</ul>
+
+<p>If any item fails, stop and resolve it before continuing.</p>
+
+<hr class="section-rule">
+
+<!-- PART 1: CONCEPTS -->
+<h2>Part 1 — Core Concepts</h2>
+<p>Read this section before writing any files. Understanding <em>why</em> before <em>how</em> is the difference between following instructions and actually learning.</p>
+
+<h3>Concept: Container</h3>
+<div class="callout callout-concept">
+  <div class="callout-label">What It Is</div>
+  <p>A container is a lightweight, isolated process that packages an application together with everything it needs to run — code, runtime, libraries, and configuration — in one portable unit.</p>
+</div>
+
+<h4>Why It Exists</h4>
+<p>Before containers, deploying an application meant manually installing the correct Python version, the correct library versions, and the correct system dependencies on every server. If the server had a different version of anything, the app might fail in unpredictable ways. This was so common it had a name: <em>"works on my machine."</em> Containers eliminate this by shipping the environment alongside the code.</p>
+
+<h4>How It Works</h4>
+<p>Docker uses Linux kernel features (namespaces and cgroups) to create an isolated process. The container sees only its own filesystem, network, and processes. It shares the host machine's kernel but cannot see or interfere with other containers unless you explicitly configure it to. The result is an isolated environment that behaves identically on any machine that runs Docker.</p>
+
+<div class="callout callout-warning">
+  <div class="callout-label">Common Mistake</div>
+  <p>Confusing an image with a container. An <strong>image</strong> is a static, read-only snapshot — like a class definition. A <strong>container</strong> is a running instance of that image — like an object. You can run 10 containers from the same image simultaneously. When you stop a container, the image still exists unchanged.</p>
+</div>
+
+<h3>Concept: Dockerfile</h3>
+<div class="callout callout-concept">
+  <div class="callout-label">What It Is</div>
+  <p>A plain text file containing ordered instructions that tell Docker how to build an image.</p>
+</div>
+
+<h4>Why It Exists</h4>
+<p>Without a Dockerfile, building an image would require running manual commands every time. A Dockerfile makes image creation repeatable, automated, and version-controlled. Anyone with the Dockerfile can build the exact same image.</p>
+
+<h4>How It Works</h4>
+<p>Docker reads the Dockerfile top to bottom and executes each instruction. Each instruction creates a new read-only <strong>layer</strong>. Docker caches these layers — if a layer's instruction has not changed, Docker reuses the cached result instead of re-executing it.</p>
+
+<table>
+  <thead><tr><th>Instruction</th><th>What It Does</th></tr></thead>
+  <tbody>
+    <tr><td><code>FROM</code></td><td>Sets the base image to start from</td></tr>
+    <tr><td><code>WORKDIR</code></td><td>Sets the working directory for all subsequent instructions</td></tr>
+    <tr><td><code>COPY</code></td><td>Copies files from host into the image</td></tr>
+    <tr><td><code>RUN</code></td><td>Executes a shell command during the build</td></tr>
+    <tr><td><code>EXPOSE</code></td><td>Documents which port the application uses</td></tr>
+    <tr><td><code>CMD</code></td><td>Sets the default command to run when the container starts</td></tr>
+  </tbody>
+</table>
+
+<div class="callout callout-warning">
+  <div class="callout-label">Common Mistake</div>
+  <p>Putting <code>COPY . .</code> before <code>RUN pip install</code>. The correct order is: copy <code>requirements.txt</code> first, install dependencies (this layer is now cached), then copy the rest of the application. Dependency installation only re-runs when <code>requirements.txt</code> changes.</p>
+</div>
+
+<h3>Concept: Docker Compose</h3>
+<div class="callout callout-concept">
+  <div class="callout-label">What It Is</div>
+  <p>A tool for defining and running multi-container applications using a single YAML file (<code>docker-compose.yml</code>).</p>
+</div>
+
+<h4>Why It Exists</h4>
+<p>Our application has three containers: frontend, backend, and database. Without Compose, you would start each container with a separate <code>docker run</code> command that includes all ports, environment variables, network settings, and volume mounts. Compose defines the entire system in one file and starts everything with one command: <code>docker compose up</code>.</p>
+
+<h4>How It Works</h4>
+<p>The <code>docker-compose.yml</code> file defines a list of <strong>services</strong>. Compose automatically creates a shared network and adds all services to it. Services discover each other using the <strong>service name as the hostname</strong> — no IP addresses needed.</p>
+
+<div class="callout callout-warning">
+  <div class="callout-label">Common Mistake</div>
+  <p>Assuming <code>depends_on</code> waits for a service to be fully ready. By default it only waits until the container process has started — not until the application is ready to accept connections. Use <code>depends_on</code> with a <code>healthcheck</code> and <code>condition: service_healthy</code>.</p>
+</div>
+
+<h3>Concept: Docker Volume</h3>
+<div class="callout callout-concept">
+  <div class="callout-label">What It Is</div>
+  <p>A mechanism for persisting data outside a container's temporary filesystem.</p>
+</div>
+
+<h4>Why It Exists</h4>
+<p>A container's filesystem is ephemeral — when the container is removed, all data written inside it is gone. Volumes store data on the host machine and mount it into the container at a specific path. When the container restarts, Docker mounts the same volume and the database finds all its data intact.</p>
+
+<div class="callout callout-warning">
+  <div class="callout-label">Common Mistake</div>
+  <p>Running <code>docker compose down -v</code>. The <code>-v</code> flag deletes all named volumes. Without <code>-v</code>, <code>docker compose down</code> preserves volumes and your data survives. This distinction matters enormously in production.</p>
+</div>
+
+<hr class="section-rule">
+
+<!-- PART 2: INSTRUCTIONS -->
+<h2>Part 2 — Step-by-Step Instructions</h2>
+<p>Write and verify each step before moving to the next.</p>
+
+<div class="step">
+  <div class="step-header"><div class="step-num">1</div>Create the database initialization script</div>
+  <div class="step-body">
+    <p>PostgreSQL automatically executes any <code>.sql</code> files placed in <code>/docker-entrypoint-initdb.d/</code> on first startup.</p>
+    <p>Create <strong><code>docker/init.sql</code></strong>:</p>
+<pre>CREATE TABLE IF NOT EXISTS products (
+    id     SERIAL PRIMARY KEY,
+    name   VARCHAR(100) NOT NULL,
+    price  NUMERIC(10, 2) NOT NULL
+);</pre>
+    <table>
+      <thead><tr><th>Line</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td><code>CREATE TABLE IF NOT EXISTS</code></td><td>Safe to run multiple times — does nothing if table already exists</td></tr>
+        <tr><td><code>id SERIAL PRIMARY KEY</code></td><td>Auto-incrementing integer, unique identifier</td></tr>
+        <tr><td><code>name VARCHAR(100) NOT NULL</code></td><td>Text up to 100 characters, cannot be empty</td></tr>
+        <tr><td><code>price NUMERIC(10, 2) NOT NULL</code></td><td>Decimal number with 2 decimal places, cannot be empty</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header"><div class="step-num">2</div>Write the backend application</div>
+  <div class="step-body">
+    <p>Create <strong><code>app/backend/requirements.txt</code></strong>:</p>
+<pre>flask==3.0.3
+psycopg2-binary==2.9.9</pre>
+    <p>Create <strong><code>app/backend/app.py</code></strong>:</p>
+<pre>from flask import Flask, jsonify, request
+import psycopg2
+import os
+
+app = Flask(__name__)
+
+
+def get_db():
+    return psycopg2.connect(
+        host=os.environ['DB_HOST'],
+        database=os.environ['DB_NAME'],
+        user=os.environ['DB_USER'],
+        password=os.environ['DB_PASSWORD']
+    )
+
+
+@app.route('/health')
+def health():
+    return jsonify({'status': 'ok'})
+
+
+@app.route('/products', methods=['GET'])
+def get_products():
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute('SELECT id, name, price FROM products ORDER BY id')
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    return jsonify([{'id': r[0], 'name': r[1], 'price': float(r[2])} for r in rows])
+
+
+@app.route('/products', methods=['POST'])
+def add_product():
+    data = request.get_json()
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute(
+        'INSERT INTO products (name, price) VALUES (%s, %s) RETURNING id',
+        (data['name'], data['price'])
+    )
+    product_id = cur.fetchone()[0]
+    conn.commit()
+    cur.close()
+    conn.close()
+    return jsonify({'id': product_id, 'name': data['name'], 'price': data['price']}), 201
+
+
+@app.route('/products/&lt;int:product_id&gt;', methods=['DELETE'])
+def delete_product(product_id):
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute('DELETE FROM products WHERE id = %s', (product_id,))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return '', 204
+
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)</pre>
+    <div class="callout callout-tip">
+      <div class="callout-label">Key Observations</div>
+      <p>Database credentials come from environment variables (<code>os.environ</code>) — never written in the code. Flask must listen on <code>0.0.0.0</code> inside a container, not just <code>localhost</code>.</p>
+    </div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header"><div class="step-num">3</div>Write the backend Dockerfile</div>
+  <div class="step-body">
+    <p>Create <strong><code>app/backend/Dockerfile</code></strong>:</p>
+<pre>FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY app.py .
+
+EXPOSE 5000
+
+CMD ["python", "app.py"]</pre>
+    <table>
+      <thead><tr><th>Line</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td><code>FROM python:3.11-slim</code></td><td>Minimal Debian + Python 3.11</td></tr>
+        <tr><td><code>WORKDIR /app</code></td><td>Creates and sets working directory</td></tr>
+        <tr><td><code>COPY requirements.txt .</code></td><td>Dependencies first — enables layer caching</td></tr>
+        <tr><td><code>RUN pip install …</code></td><td>Cached until requirements.txt changes</td></tr>
+        <tr><td><code>COPY app.py .</code></td><td>Application code in a separate layer</td></tr>
+        <tr><td><code>EXPOSE 5000</code></td><td>Documentation only — does not publish the port</td></tr>
+        <tr><td><code>CMD ["python", "app.py"]</code></td><td>Default start command</td></tr>
+      </tbody>
+    </table>
+    <p>Test the build:</p>
+<pre>cd app/backend
+docker build -t shoplist-backend:local .</pre>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header"><div class="step-num">4</div>Write the Nginx configuration</div>
+  <div class="step-body">
+    <p>Create <strong><code>app/frontend/nginx.conf</code></strong>:</p>
+<pre>server {
+    listen 80;
+
+    location / {
+        root /usr/share/nginx/html;
+        try_files $uri $uri/ /index.html;
+    }
+
+    location /api/ {
+        proxy_pass http://backend:5000/;
+        proxy_set_header Host $host;
+    }
+}</pre>
+    <div class="callout callout-tip">
+      <div class="callout-label">How Routing Works</div>
+      <p>Requests to <code>/</code> → Nginx serves static files.<br>
+      Requests to <code>/api/products</code> → Nginx strips <code>/api/</code> and forwards to <code>http://backend:5000/products</code>.<br>
+      <code>backend</code> is the Docker Compose service name — resolved automatically. The backend is not accessible from outside the Docker network.</p>
+    </div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header"><div class="step-num">5</div>Write the frontend files</div>
+  <div class="step-body">
+    <p>Create <strong><code>app/frontend/style.css</code></strong>:</p>
+<pre>body { font-family: sans-serif; max-width: 600px; margin: 2rem auto; padding: 0 1rem; }
+h1 { color: #1e293b; }
+form { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+input { padding: 0.4rem 0.6rem; border: 1px solid #cbd5e1; border-radius: 4px; flex: 1; }
+button { padding: 0.4rem 0.85rem; background: #2563eb; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+button:hover { background: #1d4ed8; }
+ul { list-style: none; padding: 0; }
+li { display: flex; justify-content: space-between; align-items: center; padding: 0.65rem 0; border-bottom: 1px solid #e2e8f0; }
+li button { background: #dc2626; font-size: 0.8rem; }</pre>
+    <p>Create <strong><code>app/frontend/index.html</code></strong>:</p>
+<pre>&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+  &lt;meta charset="UTF-8"&gt;
+  &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+  &lt;title&gt;ShopList&lt;/title&gt;
+  &lt;link rel="stylesheet" href="style.css"&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;h1&gt;ShopList&lt;/h1&gt;
+  &lt;form id="add-form"&gt;
+    &lt;input type="text" id="name" placeholder="Product name" required&gt;
+    &lt;input type="number" id="price" placeholder="Price" step="0.01" min="0" required&gt;
+    &lt;button type="submit"&gt;Add Product&lt;/button&gt;
+  &lt;/form&gt;
+  &lt;ul id="product-list"&gt;&lt;/ul&gt;
+  &lt;script src="app.js"&gt;&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</pre>
+    <p>Create <strong><code>app/frontend/app.js</code></strong>:</p>
+<pre>const API = '/api';
+
+async function loadProducts() {
+  const response = await fetch(`${API}/products`);
+  const products = await response.json();
+  const list = document.getElementById('product-list');
+  list.innerHTML = products.map(p =&gt;
+    `&lt;li&gt;
+      &lt;span&gt;${p.name} — $${parseFloat(p.price).toFixed(2)}&lt;/span&gt;
+      &lt;button onclick="deleteProduct(${p.id})"&gt;Delete&lt;/button&gt;
+    &lt;/li&gt;`
+  ).join('');
+}
+
+async function deleteProduct(id) {
+  await fetch(`${API}/products/${id}`, { method: 'DELETE' });
+  loadProducts();
+}
+
+document.getElementById('add-form').addEventListener('submit', async (e) =&gt; {
+  e.preventDefault();
+  const name = document.getElementById('name').value.trim();
+  const price = parseFloat(document.getElementById('price').value);
+  await fetch(`${API}/products`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, price })
+  });
+  e.target.reset();
+  loadProducts();
+});
+
+loadProducts();</pre>
+    <div class="callout callout-tip">
+      <div class="callout-label">Notice</div>
+      <p><code>API = '/api'</code> uses a relative path. The browser sends all requests to Nginx. Nginx handles routing to the backend internally. The JavaScript never needs to know port 5000 exists.</p>
+    </div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header"><div class="step-num">6</div>Write the frontend Dockerfile</div>
+  <div class="step-body">
+    <p>Create <strong><code>app/frontend/Dockerfile</code></strong>:</p>
+<pre>FROM nginx:1.25-alpine
+
+COPY index.html  /usr/share/nginx/html/
+COPY app.js      /usr/share/nginx/html/
+COPY style.css   /usr/share/nginx/html/
+COPY nginx.conf  /etc/nginx/conf.d/default.conf
+
+EXPOSE 80</pre>
+    <p>The custom <code>nginx.conf</code> replaces the default Nginx configuration.</p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header"><div class="step-num">7</div>Write Docker Compose</div>
+  <div class="step-body">
+    <p>Create <strong><code>docker/docker-compose.yml</code></strong>:</p>
+<pre>services:
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: shoplist
+      POSTGRES_USER: shopuser
+      POSTGRES_PASSWORD: shoppass
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shopuser -d shoplist"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ../app/backend
+    environment:
+      DB_HOST: postgres
+      DB_NAME: shoplist
+      DB_USER: shopuser
+      DB_PASSWORD: shoppass
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ../app/frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres-data:</pre>
+    <table>
+      <thead><tr><th>Decision</th><th>Reason</th></tr></thead>
+      <tbody>
+        <tr><td>Backend has no <code>ports:</code></td><td>Only reachable within the Docker network — intentional</td></tr>
+        <tr><td><code>condition: service_healthy</code></td><td>Backend starts only when postgres passes <code>pg_isready</code></td></tr>
+        <tr><td><code>./init.sql</code> bind mount</td><td>Postgres executes it automatically on first startup</td></tr>
+        <tr><td><code>DB_HOST: postgres</code></td><td>Service name, not an IP address — Compose resolves it</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header"><div class="step-num">8</div>Run and verify</div>
+  <div class="step-body">
+<pre>cd docker
+docker compose up --build</pre>
+    <p>Wait for all three services to show as running. Expected output:</p>
+<pre>postgres-1  | database system is ready to accept connections
+backend-1   | * Running on all addresses (0.0.0.0)
+frontend-1  | Configuration complete; ready for start up</pre>
+    <p>Open <code>http://localhost</code> in your browser. Add two products. Verify they appear in the list.</p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header"><div class="step-num">9</div>Verify persistence</div>
+  <div class="step-body">
+<pre># Stop all containers (volumes preserved)
+docker compose down
+
+# Start again
+docker compose up
+
+# Open http://localhost — products are still there</pre>
+    <p>Now see what data loss looks like:</p>
+<pre>docker compose down -v    # -v deletes volumes
+docker compose up --build
+# Open http://localhost — products are gone</pre>
+    <div class="callout callout-warning">
+      <div class="callout-label">Remember This</div>
+      <p>The <code>-v</code> flag is destructive. In production, <code>docker compose down -v</code> on a database service destroys all data permanently.</p>
+    </div>
+  </div>
+</div>
+
+<hr class="section-rule">
+
+<!-- INTERVIEW QUESTIONS -->
+<h2>Interview Questions</h2>
+<p>Answer each question without looking at notes. If you cannot, review the relevant concept section above.</p>
+
+<div class="qa">
+  <div class="qa-q">Q1 — What is the difference between a Docker image and a container?</div>
+  <div class="qa-a">An image is a read-only template — a static snapshot of a filesystem with the application and all its dependencies. A container is a running instance of an image. The image does not change when you run or stop a container. You can create many containers from the same image.</div>
+</div>
+
+<div class="qa">
+  <div class="qa-q">Q2 — What does EXPOSE do in a Dockerfile?</div>
+  <div class="qa-a">EXPOSE is documentation. It records which port the application listens on so that developers and tools know where to connect. It does not actually publish or open the port. Publishing happens in docker-compose.yml under <code>ports:</code>, or with the <code>-p</code> flag in <code>docker run</code>.</div>
+</div>
+
+<div class="qa">
+  <div class="qa-q">Q3 — Why does the order of instructions in a Dockerfile matter?</div>
+  <div class="qa-a">Because Docker caches each layer. If you change a file, Docker invalidates the cache for that layer and all layers after it. By copying <code>requirements.txt</code> before the application code and running <code>pip install</code> immediately after, the slow install step is cached and only re-runs when dependencies actually change.</div>
+</div>
+
+<div class="qa">
+  <div class="qa-q">Q4 — How do containers in Docker Compose communicate?</div>
+  <div class="qa-a">Compose creates a shared network and adds all services to it. Each service is reachable from other services using the service name as the hostname. No IP addresses or port configuration needed between services — only ports exposed to the host need the <code>ports:</code> mapping.</div>
+</div>
+
+<div class="qa">
+  <div class="qa-q">Q5 — What is the difference between docker compose down and docker compose down -v?</div>
+  <div class="qa-a"><code>docker compose down</code> stops containers and removes the network but preserves named volumes. <code>docker compose down -v</code> also deletes named volumes, permanently destroying any data stored in them. For a database, this means all records are gone.</div>
+</div>
+
+</body>
+</html>
