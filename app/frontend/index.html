@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShopList</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>ShopList</h1>
+  <form id="add-form">
+    <input type="text" id="name" placeholder="Product name" required>
+    <input type="number" id="price" placeholder="Price" step="0.01" min="0" required>
+    <button type="submit">Add Product</button>
+  </form>
+  <ul id="product-list"></ul>
+  <script src="app.js"></script>
+</body>
+</html>
