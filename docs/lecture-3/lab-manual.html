@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lecture 3 — GitLab CI/CD | Lab Manual</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0fdfa; color: #134e4a; line-height: 1.6; }
+    .header { background: linear-gradient(135deg, #0e7490 0%, #0891B2 100%); color: white; padding: 3rem 2rem 2rem; text-align: center; }
+    .header h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .header .subtitle { font-size: 1.1rem; opacity: 0.85; }
+    .badge-row { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; margin-top: 1rem; }
+    .badge { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); border-radius: 999px; padding: 0.3rem 1rem; font-size: 0.85rem; }
+    .container { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
+    .exercise { background: white; border-radius: 10px; padding: 2rem; margin: 2rem 0; box-shadow: 0 2px 8px rgba(8,145,178,0.08); }
+    .exercise-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid #a5f3fc; }
+    .exercise-num { background: #0891B2; color: white; width: 3rem; height: 3rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 700; flex-shrink: 0; }
+    .exercise-meta h2 { color: #0891B2; font-size: 1.3rem; }
+    .exercise-meta .tags { display: flex; gap: 0.5rem; margin-top: 0.3rem; flex-wrap: wrap; }
+    .tag { background: #cffafe; color: #0e7490; font-size: 0.78rem; padding: 0.15rem 0.6rem; border-radius: 999px; font-weight: 600; }
+    .section { margin: 1.25rem 0; }
+    .section h3 { color: #0e7490; font-size: 1rem; font-weight: 700; margin-bottom: 0.75rem; border-left: 3px solid #0891B2; padding-left: 0.75rem; }
+    pre { background: #042f2e; color: #99f6e4; border-radius: 8px; padding: 1.25rem; overflow-x: auto; font-size: 0.85rem; line-height: 1.6; margin: 0.75rem 0; }
+    code { font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace; }
+    .inline-code { background: #cffafe; color: #0e7490; padding: 0.1rem 0.4rem; border-radius: 4px; font-family: 'Cascadia Code', monospace; font-size: 0.875em; }
+    .expected { background: #f0fdf4; border: 1px solid #86efac; border-radius: 6px; padding: 0.75rem 1rem; margin: 0.5rem 0; }
+    .expected-label { font-size: 0.75rem; font-weight: 700; color: #16a34a; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.25rem; }
+    .observe { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 0.75rem 1rem; margin: 0.75rem 0; }
+    .observe-label { font-size: 0.75rem; font-weight: 700; color: #d97706; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.25rem; }
+    .observe p { color: #78350f; font-size: 0.92rem; }
+    .broken { background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 0.75rem 1rem; margin: 0.75rem 0; }
+    .broken-label { font-size: 0.75rem; font-weight: 700; color: #dc2626; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.25rem; }
+    .broken p { color: #991b1b; font-size: 0.92rem; }
+    .question-block { background: #ecfeff; border: 1px solid #a5f3fc; border-radius: 6px; padding: 0.75rem 1rem; margin: 0.5rem 0; }
+    .question-block .q { font-weight: 600; color: #134e4a; margin-bottom: 0.25rem; font-size: 0.95rem; }
+    .question-block .a { color: #0e7490; font-size: 0.9rem; font-style: italic; }
+    .validation-section { background: white; border-radius: 10px; padding: 2rem; margin: 2rem 0; box-shadow: 0 2px 8px rgba(8,145,178,0.08); }
+    .validation-section h2 { color: #0891B2; font-size: 1.4rem; border-bottom: 2px solid #a5f3fc; padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
+    .step { display: flex; gap: 1rem; margin: 1.25rem 0; align-items: flex-start; }
+    .step-num { background: #0891B2; color: white; width: 2rem; height: 2rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0; margin-top: 0.1rem; }
+    .step-content { flex: 1; }
+    .step-content h4 { color: #134e4a; font-size: 0.95rem; margin-bottom: 0.4rem; }
+    .rule-box { background: #cffafe; border: 2px solid #0891B2; border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+    .rule-box h3 { color: #0e7490; margin-bottom: 0.5rem; font-size: 1rem; }
+    .rule-box ol { margin-left: 1.25rem; }
+    .rule-box li { color: #134e4a; font-size: 0.92rem; margin: 0.3rem 0; }
+    footer { text-align: center; color: #94a3b8; font-size: 0.85rem; padding: 2rem; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Lecture 3 — GitLab CI/CD</h1>
+  <p class="subtitle">ShopList DevOps Training &bull; Lab Manual</p>
+  <div class="badge-row">
+    <span class="badge">3 exercises</span>
+    <span class="badge">1 bonus</span>
+    <span class="badge">9-step validation</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Exercise 1 -->
+  <div class="exercise">
+    <div class="exercise-header">
+      <div class="exercise-num">1</div>
+      <div class="exercise-meta">
+        <h2>Inspect the Pipeline</h2>
+        <div class="tags">
+          <span class="tag">Easy</span>
+          <span class="tag">Observation</span>
+          <span class="tag">~10 min</span>
+        </div>
+      </div>
+    </div>
+
+    <p>Open <code class="inline-code">.gitlab-ci.yml</code> at the project root and answer each question in writing or aloud.</p>
+
+    <div class="section">
+      <h3>Questions</h3>
+
+      <div class="question-block">
+        <div class="q">Q1: How many jobs are defined? List them by name.</div>
+        <div class="a">Expected: 4 — build-backend, build-frontend, test-backend, push-images.</div>
+      </div>
+      <div class="question-block">
+        <div class="q">Q2: Which stage does each job belong to?</div>
+        <div class="a">build-backend → build. build-frontend → build. test-backend → test. push-images → push.</div>
+      </div>
+      <div class="question-block">
+        <div class="q">Q3: Two jobs run in parallel. Which two, and why?</div>
+        <div class="a">build-backend and build-frontend. Both belong to the build stage. Jobs within the same stage run in parallel.</div>
+      </div>
+      <div class="question-block">
+        <div class="q">Q4: The push-images job has an only: block. What happens when you push to feature/lecture-3?</div>
+        <div class="a">push-images is skipped. It only runs on dev or main. Build and test still run. This is expected behavior.</div>
+      </div>
+      <div class="question-block">
+        <div class="q">Q5: What happens if you remove the services: block from a job?</div>
+        <div class="a">The first docker command fails with: Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?</div>
+      </div>
+      <div class="question-block">
+        <div class="q">Q6: Why does test-backend rebuild the image even though build-backend already built it?</div>
+        <div class="a">Each job runs in a fresh isolated container. The image from build-backend is gone — different container, different dind daemon. The rebuild is required.</div>
+      </div>
+      <div class="question-block">
+        <div class="q">Q7: What is $CI_COMMIT_SHORT_SHA, and what value would it have for commit hash abc123456789?</div>
+        <div class="a">First 8 characters of the git commit hash. Value: abc12345.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Exercise 2 -->
+  <div class="exercise">
+    <div class="exercise-header">
+      <div class="exercise-num">2</div>
+      <div class="exercise-meta">
+        <h2>Remove dind and Observe Failure</h2>
+        <div class="tags">
+          <span class="tag">Medium</span>
+          <span class="tag">Break-and-fix</span>
+          <span class="tag">~15 min</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Part A — Introduce the break</h3>
+      <p>Edit <code class="inline-code">.gitlab-ci.yml</code>. In <code class="inline-code">test-backend</code>, remove the <code class="inline-code">services:</code> block:</p>
+      <div class="broken">
+        <div class="broken-label">Broken version (test-backend)</div>
+        <pre><code>test-backend:
+  stage: test
+  image: docker:24
+  script:
+    - docker build -t $BACKEND_IMAGE:$IMAGE_TAG app/backend/
+    - docker run --rm $BACKEND_IMAGE:$IMAGE_TAG python -c "from flask import Flask; import psycopg2; print('All dependencies OK')"</code></pre>
+      </div>
+      <pre><code>git add .gitlab-ci.yml
+git commit -m "exercise: remove dind from test-backend"
+git push origin feature/lecture-3</code></pre>
+    </div>
+
+    <div class="section">
+      <h3>Part B — Observe and record the failure</h3>
+      <p>Open GitLab → CI/CD → Pipelines. Watch the new pipeline. Answer:</p>
+      <div class="observe">
+        <div class="observe-label">Observe</div>
+        <p><strong>1.</strong> Which stage fails?<br>
+        <strong>2.</strong> What is the exact error message on the first failing line?<br>
+        <strong>3.</strong> Does push-images run? Why or why not?</p>
+      </div>
+      <div class="expected">
+        <div class="expected-label">Expected observations</div>
+        <p>test-backend fails. Error: <em>Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?</em><br>
+        push-images does not run — test stage failed, push stage cancelled. This is the safety property.</p>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Part C — Restore the fix</h3>
+      <p>Restore the <code class="inline-code">services:</code> block to test-backend:</p>
+      <pre><code>test-backend:
+  stage: test
+  image: docker:24
+  services:
+    - docker:24-dind
+  script:
+    - docker build -t $BACKEND_IMAGE:$IMAGE_TAG app/backend/
+    - docker run --rm $BACKEND_IMAGE:$IMAGE_TAG python -c "from flask import Flask; import psycopg2; print('All dependencies OK')"</code></pre>
+      <pre><code>git add .gitlab-ci.yml
+git commit -m "exercise: restore dind in test-backend"
+git push origin feature/lecture-3</code></pre>
+      <div class="expected">
+        <div class="expected-label">Expected</div>
+        <p>Pipeline passes all 3 stages. push-images skipped (feature branch). This is correct.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Exercise 3 -->
+  <div class="exercise">
+    <div class="exercise-header">
+      <div class="exercise-num">3</div>
+      <div class="exercise-meta">
+        <h2>Change to :latest Tag and Observe Registry</h2>
+        <div class="tags">
+          <span class="tag">Medium</span>
+          <span class="tag">Remove-and-observe</span>
+          <span class="tag">~15 min</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Part A — Switch to :latest</h3>
+      <p>Edit the <code class="inline-code">IMAGE_TAG</code> variable:</p>
+      <div class="broken">
+        <div class="broken-label">Modified (using :latest)</div>
+        <pre><code>variables:
+  BACKEND_IMAGE: $CI_REGISTRY_IMAGE/backend
+  FRONTEND_IMAGE: $CI_REGISTRY_IMAGE/frontend
+  IMAGE_TAG: latest</code></pre>
+      </div>
+      <pre><code>git add .gitlab-ci.yml
+git commit -m "exercise: switch to :latest tag"
+git push origin dev</code></pre>
+      <p>Wait for the full pipeline including push-images to complete.</p>
+    </div>
+
+    <div class="section">
+      <h3>Part B — Observe the registry</h3>
+      <p>Open GitLab → Deploy → Container Registry → backend.</p>
+      <div class="observe">
+        <div class="observe-label">Observe</div>
+        <p><strong>1.</strong> How many tags are listed?<br>
+        <strong>2.</strong> From the tag name alone, can you tell which git commit built this image?<br>
+        <strong>3.</strong> Make one more commit and push to dev. How many tags are listed now?</p>
+      </div>
+      <div class="expected">
+        <div class="expected-label">Expected observations</div>
+        <p>After first push: 1 tag named <code class="inline-code">latest</code>.<br>
+        After second push: still 1 tag — the previous image was <strong>overwritten</strong>.<br>
+        From the tag <code class="inline-code">latest</code>, you cannot determine which commit built the image. Rollback is impossible without extra metadata.</p>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Part C — Restore SHA tagging</h3>
+      <pre><code>variables:
+  BACKEND_IMAGE: $CI_REGISTRY_IMAGE/backend
+  FRONTEND_IMAGE: $CI_REGISTRY_IMAGE/frontend
+  IMAGE_TAG: $CI_COMMIT_SHORT_SHA</code></pre>
+      <pre><code>git add .gitlab-ci.yml
+git commit -m "exercise: restore SHA tagging"
+git push origin dev</code></pre>
+      <p>Verify in the registry: the new tag matches <code class="inline-code">git log --oneline -1</code> (8-char prefix).</p>
+    </div>
+  </div>
+
+  <!-- Bonus -->
+  <div class="exercise">
+    <div class="exercise-header">
+      <div class="exercise-num">★</div>
+      <div class="exercise-meta">
+        <h2>Add a yamllint Validation Stage (Bonus)</h2>
+        <div class="tags">
+          <span class="tag">Optional</span>
+          <span class="tag">Extension</span>
+          <span class="tag">~20 min</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Background</h3>
+      <p>yamllint is a Python tool that validates YAML files for syntax errors and style issues. Adding it as a pre-build stage catches broken YAML before wasting runner time.</p>
+    </div>
+
+    <div class="section">
+      <h3>Task</h3>
+      <p>Add a <code class="inline-code">validate</code> stage before <code class="inline-code">build</code>, with a <code class="inline-code">lint-yaml</code> job:</p>
+      <pre><code>stages:
+  - validate
+  - build
+  - test
+  - push
+
+lint-yaml:
+  stage: validate
+  image: python:3.11-slim
+  script:
+    - pip install yamllint --quiet
+    - yamllint .gitlab-ci.yml</code></pre>
+      <p>Note: no <code class="inline-code">services:</code> needed — this job does not use Docker.</p>
+    </div>
+
+    <div class="section">
+      <h3>Verify</h3>
+      <div class="expected">
+        <div class="expected-label">Expected pipeline on feature branch</div>
+        <p>lint-yaml ✓ (validate stage) → build-backend ✓ + build-frontend ✓ → test-backend ✓ → push-images — (skipped)</p>
+      </div>
+      <p>To test the lint: introduce a deliberate indentation error, push, observe lint-yaml fail and build stage cancel. Restore the correct indentation to make lint pass again.</p>
+    </div>
+  </div>
+
+  <!-- Validation Checklist -->
+  <div class="validation-section">
+    <h2>Validation Checklist</h2>
+
+    <div class="rule-box">
+      <h3>Rules</h3>
+      <ol>
+        <li>Run every step in order. Do not skip steps.</li>
+        <li>Each step must produce the exact expected output before proceeding.</li>
+        <li>If a step fails, stop and resolve it before continuing.</li>
+        <li>Complete the merge in Step 9 exactly as written — do not merge to main.</li>
+      </ol>
+    </div>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <h4>.gitlab-ci.yml has 4 jobs</h4>
+        <pre><code>cat .gitlab-ci.yml | grep "stage:"</code></pre>
+        <div class="expected"><div class="expected-label">Expected</div>4 lines containing "stage:"</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <h4>Kubernetes backend manifest uses registry image</h4>
+        <pre><code>grep "image:" kubernetes/backend-deployment.yml</code></pre>
+        <div class="expected"><div class="expected-label">Expected</div>image: contains registry.gitlab.com</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <h4>Kubernetes frontend manifest uses registry image</h4>
+        <pre><code>grep "image:" kubernetes/frontend-deployment.yml</code></pre>
+        <div class="expected"><div class="expected-label">Expected</div>image: contains registry.gitlab.com</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <h4>imagePullPolicy is Always in both manifests</h4>
+        <pre><code>grep "imagePullPolicy" kubernetes/backend-deployment.yml kubernetes/frontend-deployment.yml</code></pre>
+        <div class="expected"><div class="expected-label">Expected</div>Both show imagePullPolicy: Always</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-content">
+        <h4>Feature branch pipeline passes build + test</h4>
+        <pre><code>git push origin feature/lecture-3</code></pre>
+        <div class="expected"><div class="expected-label">Expected</div>build-backend ✓ build-frontend ✓ test-backend ✓ push-images — (skipped). Log contains "All dependencies OK".</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">6</div>
+      <div class="step-content">
+        <h4>Full pipeline passes on dev (all 4 jobs)</h4>
+        <pre><code>git checkout dev && git merge feature/lecture-3 && git push origin dev</code></pre>
+        <div class="expected"><div class="expected-label">Expected</div>All 4 jobs green including push-images.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">7</div>
+      <div class="step-content">
+        <h4>Registry contains SHA-tagged images</h4>
+        <p>GitLab → Deploy → Container Registry: backend and frontend repos with tag matching <code class="inline-code">git log --oneline -1</code> (8-char prefix).</p>
+        <div class="expected"><div class="expected-label">Expected</div>Both repos visible. Tag = commit SHA.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">8</div>
+      <div class="step-content">
+        <h4>Cluster running registry images — application healthy</h4>
+        <pre><code>kubectl apply -f kubernetes/backend-deployment.yml
+kubectl apply -f kubernetes/frontend-deployment.yml
+kubectl rollout status deployment/backend -n shoplist
+kubectl rollout status deployment/frontend -n shoplist
+kubectl describe pod -n shoplist -l app=backend | grep Image:
+curl http://localhost:30080/api/health</code></pre>
+        <div class="expected"><div class="expected-label">Expected</div>Rollout successful. Image: shows registry.gitlab.com/... Health: {"status": "ok"}</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">9</div>
+      <div class="step-content">
+        <h4>Final commit and merge to dev (not main)</h4>
+        <pre><code>git add .gitlab-ci.yml kubernetes/backend-deployment.yml kubernetes/frontend-deployment.yml
+git commit -m "ci: add GitLab CI/CD pipeline and update manifests to use registry images"
+git checkout dev
+git merge feature/lecture-3
+git push origin dev</code></pre>
+        <div class="expected"><div class="expected-label">Expected</div>Push to dev succeeds. git log --oneline -3 shows Lecture 3 work on dev.</div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<footer>Lecture 3 — GitLab CI/CD &bull; ShopList DevOps Training &bull; Lab Manual</footer>
+</body>
+</html>

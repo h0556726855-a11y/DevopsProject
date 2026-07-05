@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lecture 4 — AWS EKS + Terraform | Lab Manual</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #f8f9fc;
+      color: #1a2340;
+      line-height: 1.65;
+    }
+
+    /* ── Header ── */
+    .header {
+      background: linear-gradient(135deg, #0f2057 0%, #1a3a8f 100%);
+      color: white;
+      padding: 3rem 2rem 2.25rem;
+      text-align: center;
+    }
+    .header .eyebrow {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      opacity: 0.65;
+      margin-bottom: 0.6rem;
+    }
+    .header h1 {
+      font-size: 2.1rem;
+      font-weight: 800;
+      line-height: 1.2;
+      margin-bottom: 0.5rem;
+      text-wrap: balance;
+    }
+    .header .subtitle {
+      font-size: 1rem;
+      opacity: 0.8;
+      margin-bottom: 1.2rem;
+    }
+    .badge-row {
+      display: flex;
+      gap: 0.65rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .badge {
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.28);
+      border-radius: 999px;
+      padding: 0.3rem 1rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    /* ── Layout ── */
+    .container {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 3rem;
+    }
+
+    /* ── Cost Warning ── */
+    .cost-warning {
+      background: #fff8ed;
+      border: 2.5px solid #f59e0b;
+      border-left: 6px solid #f59e0b;
+      border-radius: 10px;
+      padding: 1.4rem 1.6rem;
+      margin: 2rem 0;
+    }
+    .cost-warning-head {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      margin-bottom: 0.75rem;
+    }
+    .cost-icon {
+      background: #f59e0b;
+      color: white;
+      border-radius: 50%;
+      width: 2rem;
+      height: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      font-weight: 900;
+      flex-shrink: 0;
+    }
+    .cost-warning-head h2 {
+      color: #92400e;
+      font-size: 1.1rem;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+    }
+    .cost-warning ul {
+      margin-left: 1.2rem;
+      color: #78350f;
+    }
+    .cost-warning li {
+      font-size: 0.95rem;
+      margin: 0.3rem 0;
+    }
+    .cost-warning strong { color: #b45309; }
+    .destroy-rule {
+      margin-top: 0.9rem;
+      background: #fef3c7;
+      border: 1px solid #fcd34d;
+      border-radius: 6px;
+      padding: 0.65rem 1rem;
+      color: #92400e;
+      font-size: 0.93rem;
+      font-weight: 700;
+    }
+
+    /* ── Prerequisites Table ── */
+    .prereq-section {
+      background: white;
+      border-radius: 10px;
+      padding: 1.75rem 2rem;
+      margin: 2rem 0;
+      box-shadow: 0 2px 10px rgba(15,32,87,0.07);
+    }
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #0f2057;
+      margin-bottom: 1.2rem;
+      padding-bottom: 0.6rem;
+      border-bottom: 2px solid #e2e7f3;
+    }
+    .table-wrap { overflow-x: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    thead tr { background: #0f2057; color: white; }
+    thead th {
+      padding: 0.65rem 1rem;
+      text-align: left;
+      font-weight: 700;
+      font-size: 0.8rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    tbody tr:nth-child(even) { background: #f3f5fb; }
+    tbody tr:nth-child(odd) { background: white; }
+    tbody td {
+      padding: 0.6rem 1rem;
+      color: #1a2340;
+      vertical-align: top;
+      border-bottom: 1px solid #e8ecf5;
+    }
+    tbody td:first-child { font-weight: 600; }
+
+    /* ── Lab Part Sections ── */
+    .lab-part {
+      background: white;
+      border-radius: 10px;
+      padding: 1.75rem 2rem;
+      margin: 2rem 0;
+      box-shadow: 0 2px 10px rgba(15,32,87,0.07);
+    }
+    .part-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid #e2e7f3;
+    }
+    .part-num {
+      background: linear-gradient(135deg, #0f2057, #1a3a8f);
+      color: white;
+      width: 3rem;
+      height: 3rem;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+    .part-num.destroy-part {
+      background: linear-gradient(135deg, #b91c1c, #dc2626);
+    }
+    .part-meta h2 {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: #0f2057;
+    }
+    .part-meta .part-tags {
+      display: flex;
+      gap: 0.45rem;
+      margin-top: 0.3rem;
+      flex-wrap: wrap;
+    }
+    .ptag {
+      background: #e8ecf5;
+      color: #1a2340;
+      font-size: 0.75rem;
+      padding: 0.15rem 0.6rem;
+      border-radius: 999px;
+      font-weight: 600;
+    }
+    .ptag.accent { background: #dbeafe; color: #1d4ed8; }
+
+    /* ── Steps ── */
+    .step {
+      display: flex;
+      gap: 1rem;
+      margin: 1.5rem 0;
+      align-items: flex-start;
+    }
+    .step-num {
+      background: #1a3a8f;
+      color: white;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.82rem;
+      flex-shrink: 0;
+      margin-top: 0.15rem;
+      font-variant-numeric: tabular-nums;
+    }
+    .step-num.danger { background: #dc2626; }
+    .step-content { flex: 1; }
+    .step-content h4 {
+      color: #0f2057;
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+    }
+    .step-content p {
+      font-size: 0.93rem;
+      color: #374151;
+      margin-bottom: 0.5rem;
+    }
+
+    /* ── Code blocks ── */
+    pre {
+      background: #0d1b3e;
+      color: #a5b4fc;
+      border-radius: 8px;
+      padding: 1.2rem 1.4rem;
+      overflow-x: auto;
+      font-size: 0.84rem;
+      line-height: 1.65;
+      margin: 0.65rem 0;
+    }
+    pre code { font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace; }
+    .code-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #6b7280;
+      margin-bottom: 0.3rem;
+      margin-top: 0.75rem;
+    }
+
+    /* syntax highlight helpers */
+    .kw { color: #818cf8; }
+    .str { color: #86efac; }
+    .cm { color: #4b5a7a; font-style: italic; }
+    .val { color: #fde68a; }
+    .var { color: #fb923c; }
+    .fn { color: #67e8f9; }
+
+    /* ── Expected output ── */
+    .expected {
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      border-left: 4px solid #22c55e;
+      border-radius: 6px;
+      padding: 0.8rem 1rem;
+      margin: 0.6rem 0;
+    }
+    .expected-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #16a34a;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.35rem;
+    }
+    .expected pre {
+      background: #dcfce7;
+      color: #14532d;
+      border-radius: 5px;
+      padding: 0.7rem 1rem;
+      font-size: 0.82rem;
+      margin: 0;
+    }
+    .expected pre code { font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace; }
+
+    /* ── Warning / note boxes ── */
+    .warn-box {
+      background: #fff8ed;
+      border: 1px solid #fbbf24;
+      border-left: 4px solid #f59e0b;
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+      margin: 0.75rem 0;
+      color: #78350f;
+      font-size: 0.91rem;
+    }
+    .warn-box strong { color: #92400e; }
+    .note-box {
+      background: #eff6ff;
+      border: 1px solid #93c5fd;
+      border-left: 4px solid #3b82f6;
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+      margin: 0.75rem 0;
+      color: #1e40af;
+      font-size: 0.91rem;
+    }
+    .danger-box {
+      background: #fef2f2;
+      border: 1px solid #fca5a5;
+      border-left: 4px solid #dc2626;
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+      margin: 0.75rem 0;
+      color: #991b1b;
+      font-size: 0.91rem;
+    }
+    .danger-box strong { color: #b91c1c; }
+
+    code.ic {
+      background: #e8ecf5;
+      color: #1a2340;
+      padding: 0.1rem 0.4rem;
+      border-radius: 4px;
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      font-size: 0.875em;
+    }
+
+    /* ── Troubleshooting ── */
+    .trouble-table-wrap { overflow-x: auto; }
+    .trouble-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+    .trouble-table thead tr { background: #0f2057; color: white; }
+    .trouble-table thead th {
+      padding: 0.65rem 1rem;
+      text-align: left;
+      font-size: 0.78rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+    .trouble-table tbody tr:nth-child(odd) { background: white; }
+    .trouble-table tbody tr:nth-child(even) { background: #f3f5fb; }
+    .trouble-table tbody td {
+      padding: 0.7rem 1rem;
+      border-bottom: 1px solid #e8ecf5;
+      vertical-align: top;
+    }
+    .trouble-table .symptom { color: #b91c1c; font-weight: 600; }
+    .trouble-table .fix { color: #1a2340; }
+
+    /* ── Divider ── */
+    .divider {
+      border: none;
+      border-top: 2px solid #e2e7f3;
+      margin: 1.5rem 0;
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      color: #9ca3af;
+      font-size: 0.83rem;
+      padding: 2.5rem 1rem 2rem;
+    }
+
+    /* ── Print ── */
+    @media print {
+      body { background: white; color: black; font-size: 11pt; }
+      .header { background: #0f2057 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .lab-part, .prereq-section, .cost-warning {
+        box-shadow: none;
+        border: 1px solid #ccc;
+        break-inside: avoid;
+      }
+      pre { background: #1e293b !important; color: #e2e8f0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .expected pre { background: #dcfce7 !important; color: #14532d !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      a { color: inherit; text-decoration: none; }
+    }
+
+    @media (max-width: 600px) {
+      .header h1 { font-size: 1.5rem; }
+      .container { padding: 1rem; }
+      .lab-part, .prereq-section { padding: 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════ HEADER -->
+<div class="header">
+  <div class="eyebrow">ShopList DevOps Training &bull; Lecture 4</div>
+  <h1>Cloud Deployment — AWS EKS + Terraform</h1>
+  <p class="subtitle">Lab Manual &mdash; Free Tier</p>
+  <div class="badge-row">
+    <span class="badge">&#9200; 3 hours</span>
+    <span class="badge">Intermediate</span>
+    <span class="badge">5 lab parts</span>
+    <span class="badge">17 steps</span>
+    <span class="badge">~$0.40 total cost</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ══════════════════════════════════════════════ COST WARNING -->
+  <div class="cost-warning">
+    <div class="cost-warning-head">
+      <div class="cost-icon">$</div>
+      <h2>REAL AWS COSTS &mdash; READ BEFORE STARTING</h2>
+    </div>
+    <ul>
+      <li>EKS control plane: <strong>$0.10 per hour</strong> (not covered by Free Tier)</li>
+      <li>EC2 <code class="ic">t3.micro</code> worker node: ~$0.01/hr (Free Tier eligible for first 750 hrs/month)</li>
+      <li>NAT Gateway data transfer: negligible for this lab</li>
+      <li><strong>Estimated total for this lab (3–4 hours): ~$0.40</strong></li>
+      <li>If you leave the cluster running overnight: <strong>$2.40</strong></li>
+    </ul>
+    <div class="destroy-rule">
+      &#9888; Lab Part 5 (Step 17) is REQUIRED. You must run <code>terraform destroy</code> at the end of every session. Leaving the cluster running is not an option.
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════ PREREQUISITES -->
+  <div class="prereq-section">
+    <h2 class="section-title">Prerequisites</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Tool / Account</th>
+            <th>Version / Requirement</th>
+            <th>Verification Command</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>AWS account</td>
+            <td>Free Tier eligible, IAM user with AdministratorAccess (or EKS + EC2 + VPC + IAM)</td>
+            <td><code class="ic">aws sts get-caller-identity</code></td>
+          </tr>
+          <tr>
+            <td>AWS CLI v2</td>
+            <td>2.x or higher</td>
+            <td><code class="ic">aws --version</code></td>
+          </tr>
+          <tr>
+            <td>Terraform</td>
+            <td>1.6 or higher</td>
+            <td><code class="ic">terraform --version</code></td>
+          </tr>
+          <tr>
+            <td>kubectl</td>
+            <td>1.29 or higher</td>
+            <td><code class="ic">kubectl version --client</code></td>
+          </tr>
+          <tr>
+            <td>Git repo</td>
+            <td>Clone of this project on <code class="ic">main</code> branch</td>
+            <td><code class="ic">git branch --show-current</code></td>
+          </tr>
+          <tr>
+            <td>GitLab CI variables</td>
+            <td>AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, CLUSTER_NAME set in project settings (Step 9)</td>
+            <td>GitLab &rarr; Settings &rarr; CI/CD &rarr; Variables</td>
+          </tr>
+          <tr>
+            <td>Completed Lectures 1&ndash;3</td>
+            <td>Docker images pushed to GitLab Container Registry, <code class="ic">.gitlab-ci.yml</code> with build + verify stages working</td>
+            <td>GitLab &rarr; Packages &rarr; Container Registry</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════ PART 1 -->
+  <div class="lab-part">
+    <div class="part-header">
+      <div class="part-num">1</div>
+      <div class="part-meta">
+        <h2>Provision the EKS Cluster with Terraform</h2>
+        <div class="part-tags">
+          <span class="ptag accent">Steps 1&ndash;5</span>
+          <span class="ptag">~60 min</span>
+          <span class="ptag">Terraform</span>
+          <span class="ptag">AWS CLI</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 1 -->
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <h4>Configure the AWS CLI</h4>
+        <p>Run the configure wizard and enter your IAM credentials. Use region <code class="ic">eu-west-1</code> and output format <code class="ic">json</code>.</p>
+        <div class="code-label">Command</div>
+        <pre><code>aws configure</code></pre>
+        <p>When prompted:</p>
+        <pre><code>AWS Access Key ID [None]: <span class="val">AKIAIOSFODNN7EXAMPLE</span>
+AWS Secret Access Key [None]: <span class="val">wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY</span>
+Default region name [None]: <span class="val">eu-west-1</span>
+Default output format [None]: <span class="val">json</span></code></pre>
+        <p>Verify the credentials work:</p>
+        <pre><code>aws sts get-caller-identity</code></pre>
+        <div class="expected">
+          <div class="expected-label">Expected output</div>
+          <pre><code>{
+    "UserId": "AIDAIOSFODNN7EXAMPLE",
+    "Account": "123456789012",
+    "Arn": "arn:aws:iam::123456789012:user/devops-student"
+}</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <h4>Create the Terraform directory</h4>
+        <p>Create a <code class="ic">terraform/</code> directory at the project root. All four <code class="ic">.tf</code> files go inside it.</p>
+        <div class="code-label">Command</div>
+        <pre><code>mkdir -p terraform
+cd terraform</code></pre>
+      </div>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <h4>Write the four Terraform files</h4>
+        <p>Create each file exactly as shown. The four files together provision a VPC, IAM roles, the EKS control plane, and a single node group.</p>
+
+        <hr class="divider">
+
+        <div class="code-label">terraform/versions.tf</div>
+        <pre><code><span class="kw">terraform</span> {
+  <span class="kw">required_version</span> = <span class="str">"&gt;= 1.6"</span>
+  <span class="kw">required_providers</span> {
+    <span class="kw">aws</span> = {
+      <span class="kw">source</span>  = <span class="str">"hashicorp/aws"</span>
+      <span class="kw">version</span> = <span class="str">"~&gt; 5.0"</span>
+    }
+  }
+}
+
+<span class="kw">provider</span> <span class="str">"aws"</span> {
+  <span class="kw">region</span> = <span class="var">var.aws_region</span>
+}</code></pre>
+
+        <hr class="divider">
+
+        <div class="code-label">terraform/variables.tf</div>
+        <pre><code><span class="kw">variable</span> <span class="str">"aws_region"</span> {
+  <span class="kw">description</span> = <span class="str">"AWS region for all resources"</span>
+  <span class="kw">type</span>        = <span class="fn">string</span>
+  <span class="kw">default</span>     = <span class="str">"eu-west-1"</span>
+}
+
+<span class="kw">variable</span> <span class="str">"cluster_name"</span> {
+  <span class="kw">description</span> = <span class="str">"Name of the EKS cluster"</span>
+  <span class="kw">type</span>        = <span class="fn">string</span>
+  <span class="kw">default</span>     = <span class="str">"shoplist"</span>
+}
+
+<span class="kw">variable</span> <span class="str">"cluster_version"</span> {
+  <span class="kw">description</span> = <span class="str">"Kubernetes version for EKS"</span>
+  <span class="kw">type</span>        = <span class="fn">string</span>
+  <span class="kw">default</span>     = <span class="str">"1.29"</span>
+}
+
+<span class="kw">variable</span> <span class="str">"node_instance_type"</span> {
+  <span class="kw">description</span> = <span class="str">"EC2 instance type for the worker node"</span>
+  <span class="kw">type</span>        = <span class="fn">string</span>
+  <span class="kw">default</span>     = <span class="str">"t3.micro"</span>
+}</code></pre>
+
+        <hr class="divider">
+
+        <div class="code-label">terraform/networking.tf</div>
+        <pre><code><span class="cm"># Fetch the list of available AZs in the selected region</span>
+<span class="kw">data</span> <span class="str">"aws_availability_zones"</span> <span class="str">"available"</span> {
+  <span class="kw">state</span> = <span class="str">"available"</span>
+}
+
+<span class="cm"># VPC</span>
+<span class="kw">resource</span> <span class="str">"aws_vpc"</span> <span class="str">"main"</span> {
+  <span class="kw">cidr_block</span>           = <span class="str">"10.0.0.0/16"</span>
+  <span class="kw">enable_dns_hostnames</span> = <span class="val">true</span>
+  <span class="kw">enable_dns_support</span>   = <span class="val">true</span>
+
+  <span class="kw">tags</span> = {
+    <span class="kw">Name</span>                                          = <span class="str">"shoplist-vpc"</span>
+    <span class="str">"kubernetes.io/cluster/${var.cluster_name}"</span> = <span class="str">"shared"</span>
+  }
+}
+
+<span class="cm"># Internet Gateway</span>
+<span class="kw">resource</span> <span class="str">"aws_internet_gateway"</span> <span class="str">"main"</span> {
+  <span class="kw">vpc_id</span> = <span class="var">aws_vpc.main.id</span>
+  <span class="kw">tags</span> = { <span class="kw">Name</span> = <span class="str">"shoplist-igw"</span> }
+}
+
+<span class="cm"># Two public subnets — one per AZ (required by EKS)</span>
+<span class="kw">resource</span> <span class="str">"aws_subnet"</span> <span class="str">"public"</span> {
+  <span class="kw">count</span>                   = <span class="val">2</span>
+  <span class="kw">vpc_id</span>                  = <span class="var">aws_vpc.main.id</span>
+  <span class="kw">cidr_block</span>              = <span class="fn">cidrsubnet</span>(<span class="str">"10.0.0.0/16"</span>, <span class="val">8</span>, <span class="var">count.index</span>)
+  <span class="kw">availability_zone</span>       = <span class="var">data.aws_availability_zones.available.names[count.index]</span>
+  <span class="kw">map_public_ip_on_launch</span> = <span class="val">true</span>
+
+  <span class="kw">tags</span> = {
+    <span class="kw">Name</span>                                          = <span class="str">"shoplist-public-${count.index}"</span>
+    <span class="str">"kubernetes.io/cluster/${var.cluster_name}"</span> = <span class="str">"shared"</span>
+    <span class="str">"kubernetes.io/role/elb"</span>                      = <span class="str">"1"</span>
+  }
+}
+
+<span class="cm"># Route table — all outbound traffic via IGW</span>
+<span class="kw">resource</span> <span class="str">"aws_route_table"</span> <span class="str">"public"</span> {
+  <span class="kw">vpc_id</span> = <span class="var">aws_vpc.main.id</span>
+  <span class="kw">route</span> {
+    <span class="kw">cidr_block</span> = <span class="str">"0.0.0.0/0"</span>
+    <span class="kw">gateway_id</span> = <span class="var">aws_internet_gateway.main.id</span>
+  }
+  <span class="kw">tags</span> = { <span class="kw">Name</span> = <span class="str">"shoplist-public-rt"</span> }
+}
+
+<span class="kw">resource</span> <span class="str">"aws_route_table_association"</span> <span class="str">"public"</span> {
+  <span class="kw">count</span>          = <span class="val">2</span>
+  <span class="kw">subnet_id</span>      = <span class="var">aws_subnet.public[count.index].id</span>
+  <span class="kw">route_table_id</span> = <span class="var">aws_route_table.public.id</span>
+}</code></pre>
+
+        <hr class="divider">
+
+        <div class="code-label">terraform/eks.tf</div>
+        <pre><code><span class="cm"># IAM role for the EKS control plane</span>
+<span class="kw">resource</span> <span class="str">"aws_iam_role"</span> <span class="str">"eks_cluster"</span> {
+  <span class="kw">name</span> = <span class="str">"shoplist-eks-cluster-role"</span>
+  <span class="kw">assume_role_policy</span> = <span class="fn">jsonencode</span>({
+    <span class="kw">Version</span> = <span class="str">"2012-10-17"</span>
+    <span class="kw">Statement</span> = [{
+      <span class="kw">Action</span>    = <span class="str">"sts:AssumeRole"</span>
+      <span class="kw">Effect</span>    = <span class="str">"Allow"</span>
+      <span class="kw">Principal</span> = { <span class="kw">Service</span> = <span class="str">"eks.amazonaws.com"</span> }
+    }]
+  })
+}
+
+<span class="kw">resource</span> <span class="str">"aws_iam_role_policy_attachment"</span> <span class="str">"eks_cluster_policy"</span> {
+  <span class="kw">role</span>       = <span class="var">aws_iam_role.eks_cluster.name</span>
+  <span class="kw">policy_arn</span> = <span class="str">"arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"</span>
+}
+
+<span class="cm"># IAM role for the worker node group</span>
+<span class="kw">resource</span> <span class="str">"aws_iam_role"</span> <span class="str">"eks_nodes"</span> {
+  <span class="kw">name</span> = <span class="str">"shoplist-eks-node-role"</span>
+  <span class="kw">assume_role_policy</span> = <span class="fn">jsonencode</span>({
+    <span class="kw">Version</span> = <span class="str">"2012-10-17"</span>
+    <span class="kw">Statement</span> = [{
+      <span class="kw">Action</span>    = <span class="str">"sts:AssumeRole"</span>
+      <span class="kw">Effect</span>    = <span class="str">"Allow"</span>
+      <span class="kw">Principal</span> = { <span class="kw">Service</span> = <span class="str">"ec2.amazonaws.com"</span> }
+    }]
+  })
+}
+
+<span class="kw">resource</span> <span class="str">"aws_iam_role_policy_attachment"</span> <span class="str">"eks_worker_node_policy"</span> {
+  <span class="kw">role</span>       = <span class="var">aws_iam_role.eks_nodes.name</span>
+  <span class="kw">policy_arn</span> = <span class="str">"arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"</span>
+}
+
+<span class="kw">resource</span> <span class="str">"aws_iam_role_policy_attachment"</span> <span class="str">"eks_cni_policy"</span> {
+  <span class="kw">role</span>       = <span class="var">aws_iam_role.eks_nodes.name</span>
+  <span class="kw">policy_arn</span> = <span class="str">"arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"</span>
+}
+
+<span class="kw">resource</span> <span class="str">"aws_iam_role_policy_attachment"</span> <span class="str">"eks_ecr_readonly"</span> {
+  <span class="kw">role</span>       = <span class="var">aws_iam_role.eks_nodes.name</span>
+  <span class="kw">policy_arn</span> = <span class="str">"arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"</span>
+}
+
+<span class="cm"># EKS control plane</span>
+<span class="kw">resource</span> <span class="str">"aws_eks_cluster"</span> <span class="str">"shoplist"</span> {
+  <span class="kw">name</span>     = <span class="var">var.cluster_name</span>
+  <span class="kw">role_arn</span> = <span class="var">aws_iam_role.eks_cluster.arn</span>
+  <span class="kw">version</span>  = <span class="var">var.cluster_version</span>
+
+  <span class="kw">vpc_config</span> {
+    <span class="kw">subnet_ids</span>              = <span class="var">aws_subnet.public[*].id</span>
+    <span class="kw">endpoint_public_access</span>  = <span class="val">true</span>
+    <span class="kw">endpoint_private_access</span> = <span class="val">false</span>
+  }
+
+  <span class="kw">depends_on</span> = [<span class="var">aws_iam_role_policy_attachment.eks_cluster_policy</span>]
+}
+
+<span class="cm"># Managed node group — one t3.micro node</span>
+<span class="kw">resource</span> <span class="str">"aws_eks_node_group"</span> <span class="str">"shoplist"</span> {
+  <span class="kw">cluster_name</span>    = <span class="var">aws_eks_cluster.shoplist.name</span>
+  <span class="kw">node_group_name</span> = <span class="str">"shoplist-nodes"</span>
+  <span class="kw">node_role_arn</span>   = <span class="var">aws_iam_role.eks_nodes.arn</span>
+  <span class="kw">subnet_ids</span>      = <span class="var">aws_subnet.public[*].id</span>
+  <span class="kw">instance_types</span>  = [<span class="var">var.node_instance_type</span>]
+
+  <span class="kw">scaling_config</span> {
+    <span class="kw">desired_size</span> = <span class="val">1</span>
+    <span class="kw">max_size</span>     = <span class="val">1</span>
+    <span class="kw">min_size</span>     = <span class="val">1</span>
+  }
+
+  <span class="kw">depends_on</span> = [
+    <span class="var">aws_iam_role_policy_attachment.eks_worker_node_policy</span>,
+    <span class="var">aws_iam_role_policy_attachment.eks_cni_policy</span>,
+    <span class="var">aws_iam_role_policy_attachment.eks_ecr_readonly</span>,
+  ]
+}
+
+<span class="cm"># Outputs</span>
+<span class="kw">output</span> <span class="str">"cluster_endpoint"</span> {
+  <span class="kw">value</span> = <span class="var">aws_eks_cluster.shoplist.endpoint</span>
+}
+
+<span class="kw">output</span> <span class="str">"cluster_name"</span> {
+  <span class="kw">value</span> = <span class="var">aws_eks_cluster.shoplist.name</span>
+}</code></pre>
+      </div>
+    </div>
+
+    <!-- Step 4 -->
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <h4>Initialise, plan, and apply Terraform</h4>
+        <p>Run these three commands in sequence from inside the <code class="ic">terraform/</code> directory. The apply step takes <strong>12&ndash;18 minutes</strong> while AWS provisions the control plane.</p>
+        <div class="code-label">Commands</div>
+        <pre><code>terraform init
+terraform plan
+terraform apply</code></pre>
+        <p>When prompted by <code class="ic">terraform apply</code>, type <code class="ic">yes</code> and press Enter.</p>
+        <div class="expected">
+          <div class="expected-label">Expected: terraform init</div>
+          <pre><code>Initializing the backend...
+Initializing provider plugins...
+- Finding hashicorp/aws versions matching "~> 5.0"...
+- Installing hashicorp/aws v5.x.x...
+Terraform has been successfully initialized!</code></pre>
+        </div>
+        <div class="expected">
+          <div class="expected-label">Expected: terraform apply (final lines)</div>
+          <pre><code>aws_eks_node_group.shoplist: Creation complete after 2m34s
+
+Apply complete! Resources: 14 added, 0 changed, 0 destroyed.
+
+Outputs:
+
+cluster_endpoint = "https://ABCDEF1234567890.gr7.eu-west-1.eks.amazonaws.com"
+cluster_name = "shoplist"</code></pre>
+        </div>
+        <div class="warn-box">
+          <strong>Billing starts now.</strong> The EKS control plane costs $0.10/hr from this moment. Complete the lab and run Step 17 in the same session.
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 5 -->
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-content">
+        <h4>Connect kubectl to the new cluster</h4>
+        <p>Update your local kubeconfig and verify that the worker node is ready.</p>
+        <div class="code-label">Commands</div>
+        <pre><code>aws eks update-kubeconfig \
+  --name shoplist \
+  --region eu-west-1
+
+kubectl get nodes</code></pre>
+        <div class="expected">
+          <div class="expected-label">Expected output</div>
+          <pre><code>Added new context arn:aws:eks:eu-west-1:123456789012:cluster/shoplist to /home/user/.kube/config
+
+NAME                                       STATUS   ROLES    AGE   VERSION
+ip-10-0-0-12.eu-west-1.compute.internal   Ready    &lt;none&gt;   2m    v1.29.x-eks-...</code></pre>
+        </div>
+        <div class="note-box">
+          If the node shows <code class="ic">NotReady</code>, wait 60 seconds and run <code class="ic">kubectl get nodes</code> again. The CNI plugin takes a moment to initialise.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════ PART 2 -->
+  <div class="lab-part">
+    <div class="part-header">
+      <div class="part-num">2</div>
+      <div class="part-meta">
+        <h2>Update Kubernetes Manifests</h2>
+        <div class="part-tags">
+          <span class="ptag accent">Steps 6&ndash;8</span>
+          <span class="ptag">~15 min</span>
+          <span class="ptag">kubectl</span>
+          <span class="ptag">YAML</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 6 -->
+    <div class="step">
+      <div class="step-num">6</div>
+      <div class="step-content">
+        <h4>Edit <code class="ic">kubernetes/frontend-service.yml</code> to use LoadBalancer</h4>
+        <p>The frontend service type must be <code class="ic">LoadBalancer</code> so AWS automatically provisions a Classic ELB. Open the file and change <code class="ic">type: ClusterIP</code> to <code class="ic">type: LoadBalancer</code>.</p>
+        <div class="code-label">kubernetes/frontend-service.yml &mdash; after edit</div>
+        <pre><code><span class="kw">apiVersion</span>: v1
+<span class="kw">kind</span>: Service
+<span class="kw">metadata</span>:
+  <span class="kw">name</span>: frontend
+  <span class="kw">namespace</span>: shoplist
+<span class="kw">spec</span>:
+  <span class="kw">type</span>: <span class="val">LoadBalancer</span>     <span class="cm"># changed from ClusterIP</span>
+  <span class="kw">selector</span>:
+    <span class="kw">app</span>: frontend
+  <span class="kw">ports</span>:
+    - <span class="kw">port</span>: <span class="val">80</span>
+      <span class="kw">targetPort</span>: <span class="val">80</span></code></pre>
+      </div>
+    </div>
+
+    <!-- Step 7 -->
+    <div class="step">
+      <div class="step-num">7</div>
+      <div class="step-content">
+        <h4>Confirm <code class="ic">__IMAGE_TAG__</code> placeholder in backend deployment</h4>
+        <p>Open <code class="ic">kubernetes/backend-deployment.yml</code> and confirm the image line uses <code class="ic">__IMAGE_TAG__</code> as the tag. The CI pipeline will substitute this with the real commit SHA at deploy time.</p>
+        <div class="code-label">kubernetes/backend-deployment.yml &mdash; relevant line</div>
+        <pre><code>          image: registry.gitlab.com/<span class="val">YOUR_GROUP</span>/devops-tikshuv-project/backend:<span class="var">__IMAGE_TAG__</span></code></pre>
+        <div class="warn-box">
+          Replace <code class="ic">YOUR_GROUP</code> with your actual GitLab group/namespace. For example: <code class="ic">registry.gitlab.com/acme-devops/devops-tikshuv-project/backend:__IMAGE_TAG__</code>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 8 -->
+    <div class="step">
+      <div class="step-num">8</div>
+      <div class="step-content">
+        <h4>Confirm <code class="ic">__IMAGE_TAG__</code> placeholder in frontend deployment</h4>
+        <p>Open <code class="ic">kubernetes/frontend-deployment.yml</code> and confirm the same pattern.</p>
+        <div class="code-label">kubernetes/frontend-deployment.yml &mdash; relevant line</div>
+        <pre><code>          image: registry.gitlab.com/<span class="val">YOUR_GROUP</span>/devops-tikshuv-project/frontend:<span class="var">__IMAGE_TAG__</span></code></pre>
+        <p>Both files should now have <code class="ic">__IMAGE_TAG__</code> as their image tag. Do not put a real SHA here — the <code class="ic">sed</code> command in the pipeline replaces it.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════ PART 3 -->
+  <div class="lab-part">
+    <div class="part-header">
+      <div class="part-num">3</div>
+      <div class="part-meta">
+        <h2>Configure the CI/CD Pipeline</h2>
+        <div class="part-tags">
+          <span class="ptag accent">Steps 9&ndash;12</span>
+          <span class="ptag">~20 min</span>
+          <span class="ptag">GitLab CI</span>
+          <span class="ptag">IAM</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 9 -->
+    <div class="step">
+      <div class="step-num">9</div>
+      <div class="step-content">
+        <h4>Add four CI/CD variables in GitLab (all masked)</h4>
+        <p>Navigate to your GitLab project &rarr; <strong>Settings</strong> &rarr; <strong>CI/CD</strong> &rarr; <strong>Variables</strong>. Add each variable below. Tick <strong>Masked</strong> for all four to prevent values from appearing in job logs.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Variable Name</th>
+                <th>Value</th>
+                <th>Masked</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code class="ic">AWS_ACCESS_KEY_ID</code></td>
+                <td>Your IAM access key ID</td>
+                <td>Yes</td>
+                <td>From IAM &rarr; Security Credentials</td>
+              </tr>
+              <tr>
+                <td><code class="ic">AWS_SECRET_ACCESS_KEY</code></td>
+                <td>Your IAM secret access key</td>
+                <td>Yes</td>
+                <td>Only shown once at key creation</td>
+              </tr>
+              <tr>
+                <td><code class="ic">AWS_REGION</code></td>
+                <td><code class="ic">eu-west-1</code></td>
+                <td>Yes</td>
+                <td>Must match the Terraform region</td>
+              </tr>
+              <tr>
+                <td><code class="ic">CLUSTER_NAME</code></td>
+                <td><code class="ic">shoplist</code></td>
+                <td>Yes</td>
+                <td>Must match <code class="ic">var.cluster_name</code> in Terraform</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 10 -->
+    <div class="step">
+      <div class="step-num">10</div>
+      <div class="step-content">
+        <h4>Add the <code class="ic">deploy</code> stage to <code class="ic">.gitlab-ci.yml</code></h4>
+        <p>Your current <code class="ic">.gitlab-ci.yml</code> has <code class="ic">build</code> and <code class="ic">verify</code> stages. Add a <code class="ic">deploy</code> stage and the job below. The <code class="ic">alpine/k8s:1.29.2</code> image bundles both <code class="ic">kubectl</code> and the AWS CLI.</p>
+        <div class="code-label">.gitlab-ci.yml &mdash; add to top-level stages list</div>
+        <pre><code><span class="kw">stages</span>:
+  - build
+  - verify
+  - <span class="val">deploy</span>          <span class="cm"># add this line</span></code></pre>
+        <div class="code-label">.gitlab-ci.yml &mdash; add the deploy job</div>
+        <pre><code><span class="fn">deploy</span>:
+  <span class="kw">stage</span>: deploy
+  <span class="kw">image</span>: <span class="str">alpine/k8s:1.29.2</span>
+  <span class="kw">script</span>:
+    - aws eks update-kubeconfig --name <span class="var">$CLUSTER_NAME</span> --region <span class="var">$AWS_REGION</span>
+    - kubectl apply -f kubernetes/namespace.yml
+    - kubectl apply -f kubernetes/postgres-secret.yml
+    - kubectl apply -f kubernetes/postgres-configmap.yml
+    - kubectl apply -f kubernetes/postgres-pvc.yml
+    - kubectl apply -f kubernetes/postgres-deployment.yml
+    - kubectl apply -f kubernetes/postgres-service.yml
+    - sed <span class="str">"s|__IMAGE_TAG__|$CI_COMMIT_SHORT_SHA|g"</span> kubernetes/backend-deployment.yml | kubectl apply -f -
+    - kubectl apply -f kubernetes/backend-service.yml
+    - sed <span class="str">"s|__IMAGE_TAG__|$CI_COMMIT_SHORT_SHA|g"</span> kubernetes/frontend-deployment.yml | kubectl apply -f -
+    - kubectl apply -f kubernetes/frontend-service.yml
+    - kubectl rollout status deployment/backend -n shoplist --timeout=120s
+    - kubectl rollout status deployment/frontend -n shoplist --timeout=120s
+  <span class="kw">needs</span>:
+    - verify-registry
+  <span class="kw">rules</span>:
+    - <span class="kw">if</span>: <span class="var">$CI_COMMIT_BRANCH</span> == <span class="var">$CI_DEFAULT_BRANCH</span></code></pre>
+        <div class="note-box">
+          The <code class="ic">sed</code> command on lines 9 and 11 replaces the literal string <code class="ic">__IMAGE_TAG__</code> in the manifest with the real <code class="ic">$CI_COMMIT_SHORT_SHA</code> before piping to <code class="ic">kubectl apply</code>. The manifest files on disk are never modified.
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 11 -->
+    <div class="step">
+      <div class="step-num">11</div>
+      <div class="step-content">
+        <h4>Commit and push to <code class="ic">main</code></h4>
+        <div class="code-label">Commands</div>
+        <pre><code>git add .gitlab-ci.yml kubernetes/frontend-service.yml
+git add kubernetes/backend-deployment.yml kubernetes/frontend-deployment.yml
+git commit -m "lecture-4: add deploy stage, update manifests for EKS"
+git push origin main</code></pre>
+        <div class="warn-box">
+          Push to <code class="ic">main</code> only. The <code class="ic">deploy</code> job has a rule that restricts it to the default branch. A push to a feature branch will trigger build and verify but not deploy.
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 12 -->
+    <div class="step">
+      <div class="step-num">12</div>
+      <div class="step-content">
+        <h4>Watch the pipeline run</h4>
+        <p>Open GitLab &rarr; <strong>CI/CD</strong> &rarr; <strong>Pipelines</strong>. Select the pipeline triggered by your push. You should see four stages progressing left to right.</p>
+        <div class="expected">
+          <div class="expected-label">Expected pipeline stages (all green)</div>
+          <pre><code>build-backend     ✓ passed
+build-frontend    ✓ passed
+verify-registry   ✓ passed
+deploy            ✓ passed</code></pre>
+        </div>
+        <p>Click into the <code class="ic">deploy</code> job log. Scan for the <code class="ic">kubectl rollout status</code> lines at the bottom:</p>
+        <div class="expected">
+          <div class="expected-label">Expected: deploy job log (last lines)</div>
+          <pre><code>deployment "backend" successfully rolled out
+deployment "frontend" successfully rolled out
+Job succeeded</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════ PART 4 -->
+  <div class="lab-part">
+    <div class="part-header">
+      <div class="part-num">4</div>
+      <div class="part-meta">
+        <h2>Verify the Deployment</h2>
+        <div class="part-tags">
+          <span class="ptag accent">Steps 13&ndash;16</span>
+          <span class="ptag">~15 min</span>
+          <span class="ptag">kubectl</span>
+          <span class="ptag">curl</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 13 -->
+    <div class="step">
+      <div class="step-num">13</div>
+      <div class="step-content">
+        <h4>Get the LoadBalancer EXTERNAL-IP</h4>
+        <div class="code-label">Command</div>
+        <pre><code>kubectl get svc -n shoplist</code></pre>
+        <div class="expected">
+          <div class="expected-label">Expected output</div>
+          <pre><code>NAME       TYPE           CLUSTER-IP      EXTERNAL-IP                                                               PORT(S)        AGE
+backend    ClusterIP      172.20.45.231   &lt;none&gt;                                                                    5000/TCP       3m
+frontend   LoadBalancer   172.20.12.88    a1b2c3d4e5f6.eu-west-1.elb.amazonaws.com   80:30080/TCP   3m
+postgres   ClusterIP      172.20.99.14    &lt;none&gt;                                                                    5432/TCP       3m</code></pre>
+        </div>
+        <div class="note-box">
+          If the <code class="ic">frontend</code> EXTERNAL-IP still shows <code class="ic">&lt;pending&gt;</code>, wait 60&ndash;90 seconds. AWS takes a moment to provision the Classic ELB and register the DNS name.
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 14 -->
+    <div class="step">
+      <div class="step-num">14</div>
+      <div class="step-content">
+        <h4>Open the app in a browser</h4>
+        <p>Copy the DNS hostname from the EXTERNAL-IP column and open it in a browser:</p>
+        <div class="code-label">Command to print the URL</div>
+        <pre><code>kubectl get svc frontend -n shoplist \
+  -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'</code></pre>
+        <p>Open <code class="ic">http://&lt;that-hostname&gt;</code> in your browser. The ShopList application should load over HTTP.</p>
+        <div class="expected">
+          <div class="expected-label">Expected: browser shows</div>
+          <pre><code>ShopList app loads — you can add and remove shopping items</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 15 -->
+    <div class="step">
+      <div class="step-num">15</div>
+      <div class="step-content">
+        <h4>Verify the backend health endpoint with curl</h4>
+        <div class="code-label">Command</div>
+        <pre><code>EXTERNAL_IP=$(kubectl get svc frontend -n shoplist \
+  -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+
+curl -s http://$EXTERNAL_IP/api/health</code></pre>
+        <div class="expected">
+          <div class="expected-label">Expected output</div>
+          <pre><code>{"status": "ok"}</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 16 -->
+    <div class="step">
+      <div class="step-num">16</div>
+      <div class="step-content">
+        <h4>Verify the running image SHA matches the last commit</h4>
+        <p>Confirm the image tag on the live backend pod matches the git commit SHA that triggered the pipeline.</p>
+        <div class="code-label">Commands</div>
+        <pre><code><span class="cm"># Get the commit SHA the pipeline ran on</span>
+git rev-parse --short HEAD
+
+<span class="cm"># Get the image tag currently running in the cluster</span>
+kubectl get pod -n shoplist \
+  -l app=backend \
+  -o jsonpath='{.items[0].spec.containers[0].image}'</code></pre>
+        <div class="expected">
+          <div class="expected-label">Expected: both values match</div>
+          <pre><code>a1b2c3d4   &lt;-- git rev-parse output
+
+registry.gitlab.com/your-group/devops-tikshuv-project/backend:a1b2c3d4
+                                                                ^^^^^^^^ same SHA</code></pre>
+        </div>
+        <div class="note-box">
+          This confirms the full loop: source code committed &rarr; image built and tagged by SHA &rarr; deployed to EKS with that exact SHA. No ambiguous <code class="ic">:latest</code> tag anywhere in the chain.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════ PART 5 DESTROY -->
+  <div class="lab-part">
+    <div class="part-header">
+      <div class="part-num destroy-part">5</div>
+      <div class="part-meta">
+        <h2>DESTROY — Tear Down All Resources</h2>
+        <div class="part-tags">
+          <span class="ptag accent">Step 17</span>
+          <span class="ptag">Required</span>
+          <span class="ptag">~15 min</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="danger-box">
+      <strong>This step is not optional.</strong> Every minute you leave the cluster running costs money. Run these three sub-steps before you close your laptop.
+    </div>
+
+    <!-- Step 17 -->
+    <div class="step">
+      <div class="step-num danger">17</div>
+      <div class="step-content">
+        <h4>Destroy the cluster and all AWS resources</h4>
+        <p><strong>Sub-step A:</strong> Delete the Kubernetes namespace first. This removes the LoadBalancer service, which instructs AWS to delete the Classic ELB. If you skip this, Terraform destroy may fail because the ELB is still attached to the VPC.</p>
+        <div class="code-label">Sub-step A — delete namespace</div>
+        <pre><code>kubectl delete namespace shoplist
+
+<span class="cm"># Wait for the namespace to terminate (ELB deletion takes ~60s)</span>
+kubectl wait --for=delete namespace/shoplist --timeout=120s</code></pre>
+        <div class="expected">
+          <div class="expected-label">Expected output</div>
+          <pre><code>namespace "shoplist" deleted</code></pre>
+        </div>
+
+        <p><strong>Sub-step B:</strong> Run <code class="ic">terraform destroy</code> from the <code class="ic">terraform/</code> directory. This deletes the node group, EKS control plane, VPC, subnets, route tables, IAM roles, and internet gateway.</p>
+        <div class="code-label">Sub-step B — terraform destroy</div>
+        <pre><code>cd terraform
+terraform destroy</code></pre>
+        <p>Type <code class="ic">yes</code> when prompted. This takes 8&ndash;12 minutes.</p>
+        <div class="expected">
+          <div class="expected-label">Expected: final output</div>
+          <pre><code>Destroy complete! Resources: 14 destroyed.</code></pre>
+        </div>
+
+        <p><strong>Sub-step C:</strong> Verify in the AWS Console that no resources remain.</p>
+        <div class="code-label">Sub-step C — console verification checklist</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>AWS Console Section</th>
+                <th>What you should see</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>EKS &rarr; Clusters</td>
+                <td>No clusters listed (or "No clusters")</td>
+              </tr>
+              <tr>
+                <td>EC2 &rarr; Instances</td>
+                <td>No running instances (t3.micro terminated)</td>
+              </tr>
+              <tr>
+                <td>EC2 &rarr; Load Balancers</td>
+                <td>No load balancers</td>
+              </tr>
+              <tr>
+                <td>VPC &rarr; Your VPCs</td>
+                <td>Only the default VPC; shoplist-vpc is gone</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="warn-box">
+          <strong>If terraform destroy fails</strong> with a dependency error (e.g., security group still attached to an ENI), wait 2 minutes and run <code class="ic">terraform destroy</code> again. The Classic ELB deletion sometimes takes longer than expected to release network interfaces.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════ TROUBLESHOOTING -->
+  <div class="lab-part">
+    <div class="part-header">
+      <div class="part-num">?</div>
+      <div class="part-meta">
+        <h2>Troubleshooting Reference</h2>
+        <div class="part-tags">
+          <span class="ptag">Quick Reference</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="trouble-table-wrap">
+      <table class="trouble-table">
+        <thead>
+          <tr>
+            <th>Symptom</th>
+            <th>Likely Cause</th>
+            <th>Fix</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="symptom">Node shows <code class="ic">NotReady</code></td>
+            <td>VPC CNI addon still initialising</td>
+            <td>Wait 90 seconds, re-run <code class="ic">kubectl get nodes</code></td>
+          </tr>
+          <tr>
+            <td class="symptom">EXTERNAL-IP stuck at <code class="ic">&lt;pending&gt;</code></td>
+            <td>ELB provisioning takes 60&ndash;90 s</td>
+            <td>Run <code class="ic">kubectl get svc -n shoplist -w</code> and wait for the hostname to appear</td>
+          </tr>
+          <tr>
+            <td class="symptom"><code class="ic">terraform apply</code> fails with "OptInRequired"</td>
+            <td>EKS not enabled for your AWS account region</td>
+            <td>Check you are using <code class="ic">eu-west-1</code>; confirm EKS is available in your account via the Console</td>
+          </tr>
+          <tr>
+            <td class="symptom">deploy job fails: <code class="ic">error: exec plugin</code></td>
+            <td>IAM credentials not passed to the job</td>
+            <td>Verify AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are set and masked in GitLab CI/CD Variables</td>
+          </tr>
+          <tr>
+            <td class="symptom">ImagePullBackOff on backend or frontend pod</td>
+            <td>Image tag does not exist in registry, or YOUR_GROUP placeholder not replaced</td>
+            <td>Check the image URL in the deployment: <code class="ic">kubectl describe pod -n shoplist -l app=backend</code></td>
+          </tr>
+          <tr>
+            <td class="symptom"><code class="ic">curl /api/health</code> returns connection refused</td>
+            <td>Backend pod not yet Ready</td>
+            <td><code class="ic">kubectl get pods -n shoplist</code> — wait for all pods to be Running</td>
+          </tr>
+          <tr>
+            <td class="symptom"><code class="ic">terraform destroy</code> fails with ENI dependency error</td>
+            <td>Classic ELB still releasing network interfaces</td>
+            <td>Wait 2 minutes and re-run <code class="ic">terraform destroy</code>. Also ensure you ran Sub-step A first</td>
+          </tr>
+          <tr>
+            <td class="symptom">Pipeline deploy stage skipped</td>
+            <td>Pushed to a branch other than <code class="ic">main</code></td>
+            <td>The deploy job has <code class="ic">if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH</code>. Push to <code class="ic">main</code> to trigger it</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  ShopList DevOps Training &bull; Lecture 4 Lab Manual &bull; Free Tier &bull; Always run terraform destroy
+</footer>
+
+</body>
+</html>

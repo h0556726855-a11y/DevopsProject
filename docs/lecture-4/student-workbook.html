@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lecture 4 — Cloud Deployment | Student Workbook</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f1f5f9; color: #1e293b; line-height: 1.6; }
+
+    /* ── Header ─────────────────────────────────────────────────── */
+    .header { background: linear-gradient(135deg, #0f1923 0%, #1e3a5f 55%, #2563eb 100%); color: white; padding: 3rem 2rem 2rem; text-align: center; }
+    .header h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 0.5rem; text-wrap: balance; }
+    .header .subtitle { font-size: 1.1rem; opacity: 0.85; margin-bottom: 1rem; }
+    .badge-row { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; margin-top: 1rem; }
+    .badge { background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); border-radius: 999px; padding: 0.3rem 1rem; font-size: 0.85rem; }
+    .badge.aws { background: rgba(255,153,0,0.25); border-color: rgba(255,153,0,0.5); color: #fcd34d; }
+
+    /* ── Layout ──────────────────────────────────────────────────── */
+    .container { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+    /* ── Cost Warning ────────────────────────────────────────────── */
+    .cost-warning {
+      background: #fff5f5;
+      border: 2px solid #dc2626;
+      border-radius: 10px;
+      padding: 1.5rem 2rem;
+      margin: 2rem 0;
+      box-shadow: 0 2px 12px rgba(220,38,38,0.12);
+    }
+    .cost-warning .warn-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .cost-warning .warn-icon {
+      background: #dc2626;
+      color: white;
+      font-size: 1.1rem;
+      font-weight: 800;
+      width: 2.2rem;
+      height: 2.2rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .cost-warning h2 { color: #b91c1c; font-size: 1.2rem; }
+    .cost-warning .cost-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.75rem;
+      margin: 1rem 0;
+    }
+    .cost-item {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+    }
+    .cost-item .cost-label { font-size: 0.75rem; font-weight: 700; color: #dc2626; text-transform: uppercase; letter-spacing: 0.07em; }
+    .cost-item .cost-val { font-size: 1.05rem; font-weight: 600; color: #7f1d1d; margin-top: 0.2rem; font-variant-numeric: tabular-nums; }
+    .cost-warning .destroy-cmd {
+      background: #0f172a;
+      color: #fca5a5;
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      font-size: 0.88rem;
+      margin-top: 0.75rem;
+      overflow-x: auto;
+    }
+    .cost-warning p { color: #7f1d1d; font-size: 0.93rem; margin-top: 0.75rem; }
+
+    /* ── Outcome table ───────────────────────────────────────────── */
+    .outcome-box { background: white; border-left: 5px solid #2563eb; border-radius: 8px; padding: 1.5rem 2rem; margin: 2rem 0; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .outcome-box h2 { color: #1d4ed8; font-size: 1.2rem; margin-bottom: 1rem; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th { background: #eff6ff; color: #1d4ed8; text-align: left; padding: 0.6rem 0.8rem; border-bottom: 2px solid #bfdbfe; }
+    td { padding: 0.6rem 0.8rem; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+    tr:hover td { background: #f8fafc; }
+
+    /* ── Sections ────────────────────────────────────────────────── */
+    .section { background: white; border-radius: 10px; padding: 2rem; margin: 2rem 0; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .section h2 { color: #1d4ed8; font-size: 1.4rem; border-bottom: 2px solid #bfdbfe; padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
+    .section h3 { color: #1e40af; font-size: 1.1rem; margin: 1.5rem 0 0.5rem; }
+
+    /* ── Concept cards ───────────────────────────────────────────── */
+    .concept-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
+    .concept-card { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 1.25rem; }
+    .concept-card .label { font-size: 0.75rem; font-weight: 700; color: #2563eb; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.4rem; }
+    .concept-card h3 { color: #1e40af; font-size: 1rem; margin: 0 0 0.5rem; }
+    .concept-card p { font-size: 0.93rem; color: #334155; line-height: 1.55; }
+
+    /* ── Prereqs ─────────────────────────────────────────────────── */
+    .prereq-list { list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.1rem; }
+    .prereq-list li { padding: 0.45rem 0; display: flex; align-items: center; gap: 0.65rem; font-size: 0.95rem; }
+    .prereq-list li::before { content: "☐"; font-size: 1.1rem; color: #2563eb; flex-shrink: 0; }
+
+    /* ── Code blocks ─────────────────────────────────────────────── */
+    pre { background: #0f172a; color: #e2e8f0; border-radius: 8px; padding: 1.25rem; overflow-x: auto; font-size: 0.83rem; line-height: 1.65; margin: 1rem 0; }
+    code { font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace; }
+    pre code { color: #e2e8f0; }
+    .inline-code { background: #eff6ff; color: #1d4ed8; padding: 0.1rem 0.4rem; border-radius: 4px; font-family: 'Cascadia Code', monospace; font-size: 0.875em; }
+    .comment { color: #64748b; }
+    .kw { color: #93c5fd; }
+    .str { color: #86efac; }
+    .val { color: #fbbf24; }
+    .hl { color: #f472b6; }
+
+    /* ── Steps ───────────────────────────────────────────────────── */
+    .steps-list { list-style: none; counter-reset: step; }
+    .step { counter-increment: step; display: flex; gap: 1.25rem; margin: 1.75rem 0; align-items: flex-start; }
+    .step-num { background: #2563eb; color: white; width: 2rem; height: 2rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem; flex-shrink: 0; margin-top: 0.15rem; }
+    .step-content { flex: 1; min-width: 0; }
+    .step-content h4 { color: #1e293b; font-size: 1rem; margin-bottom: 0.5rem; font-weight: 600; }
+    .step-content p { font-size: 0.93rem; color: #475569; margin-bottom: 0.4rem; }
+    .expected { background: #f0fdf4; border: 1px solid #86efac; border-radius: 6px; padding: 0.75rem 1rem; margin: 0.5rem 0; }
+    .expected .label { font-size: 0.72rem; font-weight: 700; color: #16a34a; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.25rem; }
+    .expected pre { background: #022c22; margin: 0.25rem 0 0; padding: 0.85rem 1rem; font-size: 0.8rem; border-radius: 5px; }
+
+    /* ── Q&A ─────────────────────────────────────────────────────── */
+    .qa-item { border-left: 3px solid #2563eb; padding: 0.5rem 0 0.5rem 1.25rem; margin: 1.5rem 0; }
+    .qa-item .q { font-weight: 600; color: #1e293b; margin-bottom: 0.5rem; font-size: 0.98rem; }
+    .qa-item .q::before { content: "Q: "; color: #2563eb; }
+    .qa-item .a { color: #475569; font-size: 0.93rem; line-height: 1.6; }
+    .qa-item .a::before { content: "A: "; font-weight: 600; color: #1e40af; }
+
+    /* ── Destroy Protocol ────────────────────────────────────────── */
+    .destroy-section {
+      background: #0f1923;
+      border-radius: 10px;
+      padding: 2rem;
+      margin: 2rem 0;
+      border: 2px solid #dc2626;
+      box-shadow: 0 4px 16px rgba(220,38,38,0.18);
+    }
+    .destroy-section h2 { color: #fca5a5; font-size: 1.4rem; border-bottom: 2px solid #7f1d1d; padding-bottom: 0.5rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.6rem; }
+    .destroy-section p { color: #94a3b8; font-size: 0.93rem; margin: 0.5rem 0; }
+    .destroy-section h3 { color: #fca5a5; font-size: 1rem; margin: 1.25rem 0 0.4rem; }
+    .destroy-section pre { background: #1e293b; border: 1px solid #7f1d1d; }
+    .destroy-checklist { list-style: none; margin: 1rem 0; }
+    .destroy-checklist li { color: #94a3b8; font-size: 0.93rem; padding: 0.3rem 0; display: flex; gap: 0.65rem; align-items: flex-start; }
+    .destroy-checklist li::before { content: "☐"; color: #dc2626; font-size: 1rem; flex-shrink: 0; margin-top: 0.05rem; }
+
+    /* ── Footer ──────────────────────────────────────────────────── */
+    footer { text-align: center; color: #94a3b8; font-size: 0.85rem; padding: 2rem; border-top: 1px solid #e2e8f0; margin-top: 2rem; background: white; }
+
+    /* ── Print ───────────────────────────────────────────────────── */
+    @media print {
+      body { background: white; font-size: 10pt; }
+      .header { background: #1e3a5f !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; padding: 1.5rem; }
+      .container { padding: 0; max-width: 100%; }
+      .section, .outcome-box, .cost-warning { box-shadow: none; break-inside: avoid; }
+      pre { white-space: pre-wrap; word-break: break-all; }
+      .destroy-section { background: #f1f5f9 !important; border-color: #dc2626 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .destroy-section h2, .destroy-section p, .destroy-section h3 { color: #1e293b !important; }
+      .destroy-section pre { background: #0f172a !important; color: #e2e8f0 !important; }
+      .destroy-checklist li { color: #1e293b !important; }
+      footer { page-break-inside: avoid; }
+      a { text-decoration: none; color: inherit; }
+    }
+
+    @media (max-width: 600px) {
+      .header h1 { font-size: 1.6rem; }
+      .concept-grid { grid-template-columns: 1fr; }
+      .prereq-list { grid-template-columns: 1fr; }
+      .cost-warning .cost-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────────────────────── -->
+<div class="header">
+  <h1>Lecture 4 — Cloud Deployment</h1>
+  <p class="subtitle">ShopList DevOps Training &bull; Student Workbook</p>
+  <div class="badge-row">
+    <span class="badge">3 hours</span>
+    <span class="badge">4 new files</span>
+    <span class="badge">3 modified files</span>
+    <span class="badge aws">AWS Free Tier</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ── Cost Warning ─────────────────────────────────────────────── -->
+  <div class="cost-warning">
+    <div class="warn-header">
+      <div class="warn-icon">!</div>
+      <h2>COST WARNING — Read Before Starting</h2>
+    </div>
+    <div class="cost-grid">
+      <div class="cost-item">
+        <div class="cost-label">EKS Cluster</div>
+        <div class="cost-val">$0.10 / hour</div>
+      </div>
+      <div class="cost-item">
+        <div class="cost-label">EC2 Worker Nodes (t3.micro × 2)</div>
+        <div class="cost-val">~$0.02 / hour</div>
+      </div>
+      <div class="cost-item">
+        <div class="cost-label">Load Balancer (NLB)</div>
+        <div class="cost-val">~$0.01 / hour</div>
+      </div>
+      <div class="cost-item">
+        <div class="cost-label">Estimated 3-Hour Lab Total</div>
+        <div class="cost-val">~$0.40</div>
+      </div>
+    </div>
+    <p><strong>You MUST run <code>terraform destroy</code> at the end of every session.</strong> Forgetting overnight costs ~$3. Forgetting over a weekend costs ~$20. The destroy command is:</p>
+    <div class="destroy-cmd">cd terraform/ &amp;&amp; terraform destroy -auto-approve</div>
+    <p>AWS billing is not retroactively reversible. If you accidentally leave resources running, open the AWS Console &rarr; EKS and delete the cluster manually.</p>
+  </div>
+
+  <!-- ── Lecture Outcome ───────────────────────────────────────────── -->
+  <div class="outcome-box">
+    <h2>Lecture Outcome (STRICT)</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>File</th>
+            <th>Change</th>
+            <th>Purpose</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code class="inline-code">terraform/main.tf</code></td>
+            <td>New</td>
+            <td>EKS cluster, VPC, subnets, node group</td>
+          </tr>
+          <tr>
+            <td><code class="inline-code">terraform/variables.tf</code></td>
+            <td>New</td>
+            <td>Input variables: region, cluster name, instance type</td>
+          </tr>
+          <tr>
+            <td><code class="inline-code">terraform/outputs.tf</code></td>
+            <td>New</td>
+            <td>Cluster endpoint, kubeconfig update command</td>
+          </tr>
+          <tr>
+            <td><code class="inline-code">terraform/versions.tf</code></td>
+            <td>New</td>
+            <td>Provider pins: AWS ~&gt; 5.0, kubernetes ~&gt; 2.0</td>
+          </tr>
+          <tr>
+            <td><code class="inline-code">kubernetes/frontend-deployment.yml</code></td>
+            <td>Modified</td>
+            <td>Service type changed to LoadBalancer</td>
+          </tr>
+          <tr>
+            <td><code class="inline-code">kubernetes/backend-deployment.yml</code></td>
+            <td>Modified</td>
+            <td>Service type changed to LoadBalancer</td>
+          </tr>
+          <tr>
+            <td><code class="inline-code">.gitlab-ci.yml</code></td>
+            <td>Modified</td>
+            <td>Add deploy stage: kubectl apply after terraform output</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top:1rem; font-size:0.9rem; color:#475569;">Dockerfiles, application source code, Nginx config, and Ansible playbooks are <strong>not touched</strong> in this lecture.</p>
+  </div>
+
+  <!-- ── Prerequisites ────────────────────────────────────────────── -->
+  <div class="section">
+    <h2>Prerequisites — Verify Before Starting</h2>
+    <ul class="prereq-list">
+      <li>AWS account with IAM user (not root) and access keys</li>
+      <li>AWS CLI installed and configured (<code class="inline-code">aws configure</code>)</li>
+      <li>Terraform CLI v1.6+ installed</li>
+      <li>kubectl installed (matches cluster version)</li>
+      <li>Docker images pushed to registry (Lecture 3 complete)</li>
+      <li>Git repo with Lectures 1–3 work merged to main</li>
+      <li>AWS region chosen: <code class="inline-code">us-east-1</code> (cheapest NAT)</li>
+      <li>Terminal with sufficient disk space (5 GB free)</li>
+      <li><code class="inline-code">aws sts get-caller-identity</code> returns your account ID</li>
+      <li>Lecture 3 CI/CD pipeline passing in GitLab / GitHub</li>
+    </ul>
+  </div>
+
+  <!-- ── Concept Cards ─────────────────────────────────────────────── -->
+  <div class="section">
+    <h2>Core Concepts</h2>
+    <div class="concept-grid">
+
+      <div class="concept-card">
+        <div class="label">Concept 1</div>
+        <h3>Infrastructure as Code (IaC)</h3>
+        <p>Infrastructure is defined in version-controlled text files rather than clicked together in a console. Every cloud resource — VPC, subnets, EKS cluster — is reproducible from a single <code class="inline-code">terraform apply</code>, and equally teardownable with <code class="inline-code">terraform destroy</code>. The state file (<code class="inline-code">terraform.tfstate</code>) is Terraform's memory of what it built.</p>
+      </div>
+
+      <div class="concept-card">
+        <div class="label">Concept 2</div>
+        <h3>Terraform Workflow</h3>
+        <p>Three commands form the core loop: <code class="inline-code">init</code> downloads provider plugins, <code class="inline-code">plan</code> shows a dry-run diff of what will change, and <code class="inline-code">apply</code> executes the changes against AWS. Never skip the plan step — it is your last chance to catch accidental deletions before real resources are affected.</p>
+      </div>
+
+      <div class="concept-card">
+        <div class="label">Concept 3</div>
+        <h3>Amazon EKS</h3>
+        <p>Elastic Kubernetes Service runs the Kubernetes control plane (API server, etcd, scheduler) as a managed AWS service. You pay $0.10/hr for the control plane regardless of node count. Worker nodes are regular EC2 instances in your account — you own their costs and security patches. EKS integrates with IAM for authentication and ALB/NLB for load balancing.</p>
+      </div>
+
+      <div class="concept-card">
+        <div class="label">Concept 4</div>
+        <h3>LoadBalancer Service Type</h3>
+        <p>When a Kubernetes Service's <code class="inline-code">type: LoadBalancer</code> is applied to an EKS cluster, the cloud controller manager automatically provisions an AWS Network Load Balancer (NLB) and wires it to the service's endpoints. The NLB gets a public DNS name within 2–3 minutes. This replaces the <code class="inline-code">NodePort</code> approach from local development.</p>
+      </div>
+
+      <div class="concept-card">
+        <div class="label">Concept 5</div>
+        <h3>Deploy Stage in CI/CD</h3>
+        <p>The pipeline now has three stages: <strong>build</strong> (Docker image), <strong>verify</strong> (tests, lint), <strong>deploy</strong> (kubectl apply to EKS). The deploy stage needs AWS credentials injected as CI/CD variables, not stored in code. It runs <code class="inline-code">aws eks update-kubeconfig</code> to authenticate kubectl, then applies the Kubernetes manifests.</p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Step-by-Step Instructions ─────────────────────────────────── -->
+  <div class="section">
+    <h2>Step-by-Step Lab Instructions</h2>
+
+    <ol class="steps-list">
+
+      <!-- Step 1 -->
+      <li class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h4>Create the Terraform directory structure</h4>
+          <p>From the repository root, create the <code class="inline-code">terraform/</code> directory and the four required files.</p>
+          <pre><code><span class="comment"># From repo root</span>
+mkdir terraform
+touch terraform/main.tf \
+      terraform/variables.tf \
+      terraform/outputs.tf \
+      terraform/versions.tf</code></pre>
+          <div class="expected">
+            <div class="label">Expected: directory listing</div>
+            <pre><code>terraform/
+  main.tf
+  outputs.tf
+  variables.tf
+  versions.tf</code></pre>
+          </div>
+        </div>
+      </li>
+
+      <!-- Step 2 -->
+      <li class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h4>Write versions.tf — pin provider versions</h4>
+          <p>Pinning providers prevents unexpected upgrades from breaking your infrastructure.</p>
+          <pre><code><span class="comment"># terraform/versions.tf</span>
+<span class="kw">terraform</span> {
+  required_version = <span class="str">">= 1.6"</span>
+
+  required_providers {
+    aws = {
+      source  = <span class="str">"hashicorp/aws"</span>
+      version = <span class="str">"~> 5.0"</span>
+    }
+    kubernetes = {
+      source  = <span class="str">"hashicorp/kubernetes"</span>
+      version = <span class="str">"~> 2.0"</span>
+    }
+  }
+}</code></pre>
+        </div>
+      </li>
+
+      <!-- Step 3 -->
+      <li class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h4>Write variables.tf — parameterise the cluster</h4>
+          <p>Input variables allow the same Terraform code to target different regions or instance sizes without editing <code class="inline-code">main.tf</code>.</p>
+          <pre><code><span class="comment"># terraform/variables.tf</span>
+<span class="kw">variable</span> <span class="str">"aws_region"</span> {
+  description = <span class="str">"AWS region to deploy into"</span>
+  type        = string
+  default     = <span class="str">"us-east-1"</span>
+}
+
+<span class="kw">variable</span> <span class="str">"cluster_name"</span> {
+  description = <span class="str">"Name for the EKS cluster"</span>
+  type        = string
+  default     = <span class="str">"shoplist-eks"</span>
+}
+
+<span class="kw">variable</span> <span class="str">"node_instance_type"</span> {
+  description = <span class="str">"EC2 instance type for worker nodes"</span>
+  type        = string
+  default     = <span class="str">"t3.micro"</span>
+}
+
+<span class="kw">variable</span> <span class="str">"desired_node_count"</span> {
+  description = <span class="str">"Number of worker nodes"</span>
+  type        = number
+  default     = <span class="val">2</span>
+}</code></pre>
+        </div>
+      </li>
+
+      <!-- Step 4 -->
+      <li class="step">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <h4>Write main.tf — VPC, subnets, EKS cluster</h4>
+          <p>This is the core infrastructure definition. It creates a VPC with two public subnets and an EKS cluster with a managed node group.</p>
+          <pre><code><span class="comment"># terraform/main.tf</span>
+<span class="kw">provider</span> <span class="str">"aws"</span> {
+  region = var.aws_region
+}
+
+<span class="comment"># ── Networking ────────────────────────────────</span>
+<span class="kw">resource</span> <span class="str">"aws_vpc"</span> <span class="str">"shoplist"</span> {
+  cidr_block           = <span class="str">"10.0.0.0/16"</span>
+  enable_dns_hostnames = <span class="val">true</span>
+  enable_dns_support   = <span class="val">true</span>
+
+  tags = { Name = <span class="str">"${var.cluster_name}-vpc"</span> }
+}
+
+<span class="kw">resource</span> <span class="str">"aws_internet_gateway"</span> <span class="str">"igw"</span> {
+  vpc_id = aws_vpc.shoplist.id
+  tags   = { Name = <span class="str">"${var.cluster_name}-igw"</span> }
+}
+
+<span class="kw">resource</span> <span class="str">"aws_subnet"</span> <span class="str">"public"</span> {
+  count             = <span class="val">2</span>
+  vpc_id            = aws_vpc.shoplist.id
+  cidr_block        = <span class="str">"10.0.${count.index}.0/24"</span>
+  availability_zone = data.aws_availability_zones.available.names[count.index]
+  map_public_ip_on_launch = <span class="val">true</span>
+
+  tags = {
+    Name                                        = <span class="str">"${var.cluster_name}-public-${count.index}"</span>
+    <span class="str">"kubernetes.io/cluster/${var.cluster_name}"</span>  = <span class="str">"owned"</span>
+    <span class="str">"kubernetes.io/role/elb"</span>                     = <span class="str">"1"</span>
+  }
+}
+
+<span class="kw">resource</span> <span class="str">"aws_route_table"</span> <span class="str">"public"</span> {
+  vpc_id = aws_vpc.shoplist.id
+  route {
+    cidr_block = <span class="str">"0.0.0.0/0"</span>
+    gateway_id = aws_internet_gateway.igw.id
+  }
+  tags = { Name = <span class="str">"${var.cluster_name}-rt"</span> }
+}
+
+<span class="kw">resource</span> <span class="str">"aws_route_table_association"</span> <span class="str">"public"</span> {
+  count          = <span class="val">2</span>
+  subnet_id      = aws_subnet.public[count.index].id
+  route_table_id = aws_route_table.public.id
+}
+
+<span class="kw">data</span> <span class="str">"aws_availability_zones"</span> <span class="str">"available"</span> {
+  state = <span class="str">"available"</span>
+}
+
+<span class="comment"># ── IAM Roles ─────────────────────────────────</span>
+<span class="kw">data</span> <span class="str">"aws_iam_policy_document"</span> <span class="str">"eks_assume"</span> {
+  statement {
+    actions = [<span class="str">"sts:AssumeRole"</span>]
+    principals {
+      type        = <span class="str">"Service"</span>
+      identifiers = [<span class="str">"eks.amazonaws.com"</span>]
+    }
+  }
+}
+
+<span class="kw">resource</span> <span class="str">"aws_iam_role"</span> <span class="str">"eks_cluster"</span> {
+  name               = <span class="str">"${var.cluster_name}-cluster-role"</span>
+  assume_role_policy = data.aws_iam_policy_document.eks_assume.json
+}
+
+<span class="kw">resource</span> <span class="str">"aws_iam_role_policy_attachment"</span> <span class="str">"eks_cluster"</span> {
+  role       = aws_iam_role.eks_cluster.name
+  policy_arn = <span class="str">"arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"</span>
+}
+
+<span class="kw">data</span> <span class="str">"aws_iam_policy_document"</span> <span class="str">"node_assume"</span> {
+  statement {
+    actions = [<span class="str">"sts:AssumeRole"</span>]
+    principals {
+      type        = <span class="str">"Service"</span>
+      identifiers = [<span class="str">"ec2.amazonaws.com"</span>]
+    }
+  }
+}
+
+<span class="kw">resource</span> <span class="str">"aws_iam_role"</span> <span class="str">"node_group"</span> {
+  name               = <span class="str">"${var.cluster_name}-node-role"</span>
+  assume_role_policy = data.aws_iam_policy_document.node_assume.json
+}
+
+<span class="kw">resource</span> <span class="str">"aws_iam_role_policy_attachment"</span> <span class="str">"node_worker"</span> {
+  role       = aws_iam_role.node_group.name
+  policy_arn = <span class="str">"arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"</span>
+}
+
+<span class="kw">resource</span> <span class="str">"aws_iam_role_policy_attachment"</span> <span class="str">"node_cni"</span> {
+  role       = aws_iam_role.node_group.name
+  policy_arn = <span class="str">"arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"</span>
+}
+
+<span class="kw">resource</span> <span class="str">"aws_iam_role_policy_attachment"</span> <span class="str">"node_ecr"</span> {
+  role       = aws_iam_role.node_group.name
+  policy_arn = <span class="str">"arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"</span>
+}
+
+<span class="comment"># ── EKS Cluster ───────────────────────────────</span>
+<span class="kw">resource</span> <span class="str">"aws_eks_cluster"</span> <span class="str">"shoplist"</span> {
+  name     = var.cluster_name
+  role_arn = aws_iam_role.eks_cluster.arn
+  version  = <span class="str">"1.29"</span>
+
+  vpc_config {
+    subnet_ids = aws_subnet.public[*].id
+  }
+
+  depends_on = [aws_iam_role_policy_attachment.eks_cluster]
+}
+
+<span class="kw">resource</span> <span class="str">"aws_eks_node_group"</span> <span class="str">"workers"</span> {
+  cluster_name    = aws_eks_cluster.shoplist.name
+  node_group_name = <span class="str">"workers"</span>
+  node_role_arn   = aws_iam_role.node_group.arn
+  subnet_ids      = aws_subnet.public[*].id
+
+  instance_types = [var.node_instance_type]
+
+  scaling_config {
+    desired_size = var.desired_node_count
+    max_size     = <span class="val">3</span>
+    min_size     = <span class="val">1</span>
+  }
+
+  depends_on = [
+    aws_iam_role_policy_attachment.node_worker,
+    aws_iam_role_policy_attachment.node_cni,
+    aws_iam_role_policy_attachment.node_ecr,
+  ]
+}</code></pre>
+        </div>
+      </li>
+
+      <!-- Step 5 -->
+      <li class="step">
+        <div class="step-num">5</div>
+        <div class="step-content">
+          <h4>Write outputs.tf — expose cluster connection details</h4>
+          <pre><code><span class="comment"># terraform/outputs.tf</span>
+<span class="kw">output</span> <span class="str">"cluster_endpoint"</span> {
+  description = <span class="str">"EKS API server endpoint"</span>
+  value       = aws_eks_cluster.shoplist.endpoint
+}
+
+<span class="kw">output</span> <span class="str">"cluster_name"</span> {
+  description = <span class="str">"EKS cluster name"</span>
+  value       = aws_eks_cluster.shoplist.name
+}
+
+<span class="kw">output</span> <span class="str">"kubeconfig_command"</span> {
+  description = <span class="str">"Run this to configure kubectl"</span>
+  value       = <span class="str">"aws eks update-kubeconfig --region ${var.aws_region} --name ${aws_eks_cluster.shoplist.name}"</span>
+}</code></pre>
+        </div>
+      </li>
+
+      <!-- Step 6 -->
+      <li class="step">
+        <div class="step-num">6</div>
+        <div class="step-content">
+          <h4>Run terraform init and plan</h4>
+          <p>Always review the plan output before applying. Confirm it shows creates, not unexpected destroys.</p>
+          <pre><code>cd terraform/
+
+<span class="comment"># Download providers (~30 seconds)</span>
+terraform init
+
+<span class="comment"># Preview what will be created — read this carefully</span>
+terraform plan</code></pre>
+          <div class="expected">
+            <div class="label">Expected: plan summary</div>
+            <pre><code>Plan: 14 to add, 0 to change, 0 to destroy.
+
+Changes to Outputs:
+  + cluster_endpoint    = (known after apply)
+  + cluster_name        = "shoplist-eks"
+  + kubeconfig_command  = (known after apply)</code></pre>
+          </div>
+        </div>
+      </li>
+
+      <!-- Step 7 -->
+      <li class="step">
+        <div class="step-num">7</div>
+        <div class="step-content">
+          <h4>Apply — create the EKS cluster (~12 minutes)</h4>
+          <p>EKS cluster creation takes 10–15 minutes. The node group attaches after the control plane is ready. Do not interrupt this command.</p>
+          <pre><code>terraform apply -auto-approve</code></pre>
+          <div class="expected">
+            <div class="label">Expected: successful apply</div>
+            <pre><code>aws_eks_cluster.shoplist: Creating...
+aws_eks_cluster.shoplist: Still creating... [10m elapsed]
+aws_eks_cluster.shoplist: Creation complete after 12m4s
+
+Apply complete! Resources: 14 added, 0 changed, 0 destroyed.
+
+Outputs:
+cluster_endpoint    = "https://AAABBBCCC.gr7.us-east-1.eks.amazonaws.com"
+cluster_name        = "shoplist-eks"
+kubeconfig_command  = "aws eks update-kubeconfig --region us-east-1 --name shoplist-eks"</code></pre>
+          </div>
+          <p style="margin-top:0.75rem; color:#dc2626; font-size:0.88rem; font-weight:600;">Cost meter starts now. Do not walk away without setting a timer to destroy.</p>
+        </div>
+      </li>
+
+      <!-- Step 8 -->
+      <li class="step">
+        <div class="step-num">8</div>
+        <div class="step-content">
+          <h4>Configure kubectl and deploy the application</h4>
+          <p>Update your local kubeconfig, verify node readiness, then apply the Kubernetes manifests.</p>
+          <pre><code><span class="comment"># Configure kubectl to talk to the new cluster</span>
+aws eks update-kubeconfig \
+  --region us-east-1 \
+  --name shoplist-eks
+
+<span class="comment"># Confirm nodes are Ready (may take 2–3 minutes)</span>
+kubectl get nodes
+
+<span class="comment"># Update Service type in manifests (LoadBalancer for cloud)</span>
+<span class="comment"># In kubernetes/frontend-deployment.yml and backend-deployment.yml:</span>
+<span class="comment">#   type: LoadBalancer   (was: NodePort or ClusterIP)</span>
+
+<span class="comment"># Apply all manifests</span>
+kubectl apply -f kubernetes/</code></pre>
+          <div class="expected">
+            <div class="label">Expected: nodes and pods</div>
+            <pre><code>NAME                            STATUS   ROLES    AGE   VERSION
+ip-10-0-0-123.ec2.internal      Ready    &lt;none&gt;   2m    v1.29.0-eks-abc123
+ip-10-0-1-45.ec2.internal       Ready    &lt;none&gt;   2m    v1.29.0-eks-abc123
+
+deployment.apps/backend created
+service/backend created
+deployment.apps/frontend created
+service/frontend created</code></pre>
+          </div>
+        </div>
+      </li>
+
+      <!-- Step 9 -->
+      <li class="step">
+        <div class="step-num">9</div>
+        <div class="step-content">
+          <h4>Add the deploy stage to .gitlab-ci.yml</h4>
+          <p>The deploy stage authenticates kubectl using CI/CD variables and applies the manifests. Add <code class="inline-code">AWS_ACCESS_KEY_ID</code>, <code class="inline-code">AWS_SECRET_ACCESS_KEY</code>, and <code class="inline-code">AWS_DEFAULT_REGION</code> as protected CI/CD variables in GitLab Settings &rarr; CI/CD &rarr; Variables.</p>
+          <pre><code><span class="comment"># .gitlab-ci.yml — append the deploy stage</span>
+<span class="kw">stages</span>:
+  - build
+  - verify
+  - <span class="hl">deploy</span>
+
+<span class="hl">deploy-to-eks</span>:
+  <span class="kw">stage</span>: <span class="hl">deploy</span>
+  <span class="kw">image</span>: <span class="str">amazon/aws-cli:latest</span>
+  <span class="kw">before_script</span>:
+    - curl -LO <span class="str">"https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"</span>
+    - chmod +x kubectl &amp;&amp; mv kubectl /usr/local/bin/
+    - aws eks update-kubeconfig
+        --region <span class="str">"$AWS_DEFAULT_REGION"</span>
+        --name <span class="str">"shoplist-eks"</span>
+  <span class="kw">script</span>:
+    - kubectl apply -f kubernetes/
+    - kubectl rollout status deployment/backend --timeout=120s
+    - kubectl rollout status deployment/frontend --timeout=120s
+  <span class="kw">environment</span>:
+    <span class="kw">name</span>: production
+  <span class="kw">only</span>:
+    - main</code></pre>
+          <div class="expected">
+            <div class="label">Expected: pipeline result</div>
+            <pre><code>deploy-to-eks  passed  (47s)
+  Waiting for deployment "backend" rollout to finish: 1 of 2 updated...
+  deployment "backend" successfully rolled out
+  deployment "frontend" successfully rolled out</code></pre>
+          </div>
+        </div>
+      </li>
+
+    </ol>
+  </div>
+
+  <!-- ── Interview Q&A ─────────────────────────────────────────────── -->
+  <div class="section">
+    <h2>Interview Questions &amp; Answers</h2>
+
+    <div class="qa-item">
+      <div class="q">What is the difference between Terraform state and the actual infrastructure?</div>
+      <div class="a">The state file (<code class="inline-code">terraform.tfstate</code>) is a local JSON record of what Terraform <em>thinks</em> it built. The actual infrastructure is whatever AWS currently has. These can drift if someone manually changes a resource in the console without going through Terraform. Running <code class="inline-code">terraform refresh</code> (or <code class="inline-code">terraform plan</code> which does this implicitly) reconciles state with reality and shows any drift. This is why direct console changes are discouraged — they create hidden divergence between code and reality.</div>
+    </div>
+
+    <div class="qa-item">
+      <div class="q">Why does EKS cost $0.10/hour even with no workloads running?</div>
+      <div class="a">The EKS control plane (API server, etcd, scheduler, controller manager) runs on AWS-managed infrastructure that AWS dedicates to your cluster. That compute is billable regardless of whether you have any pods scheduled. Worker nodes (EC2) are separate — you only pay for those while they are running. This is why <code class="inline-code">terraform destroy</code> is essential: it deletes the cluster (stopping the $0.10/hr charge) and terminates the EC2 worker nodes.</div>
+    </div>
+
+    <div class="qa-item">
+      <div class="q">What happens to the LoadBalancer Service when you run <code class="inline-code">kubectl delete service frontend</code>?</div>
+      <div class="a">The Kubernetes cloud controller manager watches for Service deletion events and calls the AWS API to delete the underlying Network Load Balancer. This is an important side effect to understand: deleting a Kubernetes resource can trigger deletion of a real AWS resource. The reverse is also true — if someone manually deletes the NLB in the AWS console, the Service will enter a broken state. All AWS resource lifecycle changes should flow through Kubernetes or Terraform, not the console.</div>
+    </div>
+
+    <div class="qa-item">
+      <div class="q">What is the purpose of the subnet tags <code class="inline-code">kubernetes.io/role/elb: "1"</code>?</div>
+      <div class="a">When Kubernetes provisions a LoadBalancer Service, the AWS cloud controller manager needs to know which subnets to place the load balancer in. It discovers eligible subnets by looking for specific tags. The tag <code class="inline-code">kubernetes.io/role/elb: "1"</code> marks a subnet as available for internet-facing (public) load balancers. Without this tag, EKS cannot create the NLB and the Service will remain in a pending state indefinitely — one of the most common gotchas when setting up EKS from scratch.</div>
+    </div>
+
+    <div class="qa-item">
+      <div class="q">How do you safely pass AWS credentials to a GitLab CI/CD pipeline without hardcoding them?</div>
+      <div class="a">GitLab CI/CD Variables (Settings &rarr; CI/CD &rarr; Variables) store secrets server-side and inject them as environment variables at runtime. Mark them as <strong>Protected</strong> (only available on protected branches) and <strong>Masked</strong> (never printed in job logs). The job uses them as <code class="inline-code">$AWS_ACCESS_KEY_ID</code> and <code class="inline-code">$AWS_SECRET_ACCESS_KEY</code> — the AWS CLI and SDKs automatically read these standard env var names. An even better production approach is OIDC federation: GitLab generates a short-lived JWT that AWS IAM trusts, eliminating long-lived keys entirely.</div>
+    </div>
+
+  </div>
+
+  <!-- ── Destroy Protocol ──────────────────────────────────────────── -->
+  <div class="destroy-section">
+    <h2>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0" aria-hidden="true">
+        <path d="M12 2L2 19h20L12 2z" stroke="#dc2626" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M12 9v5" stroke="#fca5a5" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="12" cy="16.5" r="0.75" fill="#fca5a5"/>
+      </svg>
+      Destroy Protocol — Run This Before You Finish
+    </h2>
+
+    <p>Run every command in sequence. Verify each one succeeds before continuing. The entire sequence takes about 5 minutes.</p>
+
+    <h3>1. Verify what is still running</h3>
+    <pre><code><span class="comment"># Confirm kubectl is pointed at the right cluster</span>
+kubectl config current-context
+
+<span class="comment"># List any LoadBalancer services (NLBs cost money)</span>
+kubectl get svc --all-namespaces | grep LoadBalancer</code></pre>
+
+    <h3>2. Delete Kubernetes workloads first</h3>
+    <pre><code><span class="comment"># Deleting services before terraform destroy</span>
+<span class="comment"># ensures AWS cleans up NLBs gracefully</span>
+kubectl delete -f kubernetes/ --ignore-not-found=true
+
+<span class="comment"># Wait for LoadBalancer deletion (~60 seconds)</span>
+kubectl get svc --watch</code></pre>
+
+    <h3>3. Run terraform destroy</h3>
+    <pre><code>cd terraform/
+
+<span class="comment"># Preview what will be destroyed — confirm 14 resources</span>
+terraform plan -destroy
+
+<span class="comment"># Destroy all infrastructure</span>
+terraform destroy -auto-approve</code></pre>
+
+    <h3>4. Confirm destruction in AWS Console</h3>
+    <p>After <code class="inline-code">terraform destroy</code> completes, verify manually:</p>
+    <ul class="destroy-checklist">
+      <li>AWS Console &rarr; EKS &rarr; Clusters: list should be empty</li>
+      <li>AWS Console &rarr; EC2 &rarr; Instances: no instances in "running" state from this lab</li>
+      <li>AWS Console &rarr; EC2 &rarr; Load Balancers: no NLBs from this lab</li>
+      <li>AWS Console &rarr; VPC &rarr; Your VPCs: <code class="inline-code">shoplist-eks-vpc</code> should be gone</li>
+      <li>AWS Billing &rarr; Bills: verify no unexpected charges within 15 minutes</li>
+    </ul>
+
+    <h3>5. Emergency manual destroy (if Terraform fails)</h3>
+    <pre><code><span class="comment"># If terraform destroy errors, delete the cluster directly</span>
+aws eks delete-nodegroup \
+  --cluster-name shoplist-eks \
+  --nodegroup-name workers \
+  --region us-east-1
+
+<span class="comment"># Wait for node group deletion, then delete cluster</span>
+aws eks delete-cluster \
+  --name shoplist-eks \
+  --region us-east-1
+
+<span class="comment"># Verify cluster is gone</span>
+aws eks list-clusters --region us-east-1</code></pre>
+  </div>
+
+</div><!-- /.container -->
+
+<footer>
+  Lecture 4 &mdash; Cloud Deployment &middot; ShopList DevOps Training &middot; Course Module Template v1.0
+</footer>
+
+</body>
+</html>

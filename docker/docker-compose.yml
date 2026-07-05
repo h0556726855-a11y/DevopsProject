@@ -1,0 +1,39 @@
+services:
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: shoplist
+      POSTGRES_USER: shopuser
+      POSTGRES_PASSWORD: shoppass
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      # - ./init.sql:/docker-entrypoint-initdb.d/
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shopuser -d shoplist"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ../app/backend
+    environment:
+      DB_HOST: postgres
+      DB_NAME: shoplist
+      DB_USER: shopuser
+      DB_PASSWORD: shoppass
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ../app/frontend
+    ports:
+      - "8888:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres-data:

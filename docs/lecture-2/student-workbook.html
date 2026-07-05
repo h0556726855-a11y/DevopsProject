@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 2 — Student Workbook | Kubernetes & k3d</title>
+<style>
+  :root {
+    --blue: #2563EB;
+    --blue-light: #EFF6FF;
+    --blue-dark: #1E40AF;
+    --slate: #334155;
+    --gray: #64748B;
+    --lgray: #94A3B8;
+    --text: #1E293B;
+    --white: #FFFFFF;
+    --green: #10B981;
+    --amber: #F59E0B;
+    --red: #DC2626;
+    --code-bg: #0F172A;
+    --code-text: #7DD3FC;
+    --warn: #FEF3C7;
+    --warn-border: #F59E0B;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 14px;
+    color: var(--text);
+    background: #F8FAFC;
+    line-height: 1.6;
+  }
+  .page { max-width: 900px; margin: 0 auto; padding: 32px 24px; }
+
+  /* Cover */
+  .cover {
+    background: var(--blue);
+    color: white;
+    padding: 48px 40px 36px;
+    border-radius: 8px;
+    margin-bottom: 32px;
+  }
+  .cover-badge { background: rgba(255,255,255,0.2); display: inline-block; padding: 4px 14px; border-radius: 4px; font-size: 12px; font-weight: 700; letter-spacing: 1px; margin-bottom: 16px; }
+  .cover h1 { font-size: 42px; font-weight: 800; line-height: 1.1; margin-bottom: 8px; }
+  .cover .subtitle { font-size: 20px; opacity: 0.85; margin-bottom: 24px; }
+  .outcome-box { background: rgba(255,255,255,0.15); border-left: 4px solid rgba(255,255,255,0.6); padding: 16px 20px; border-radius: 4px; margin-top: 16px; }
+  .outcome-box .label { font-size: 11px; font-weight: 700; letter-spacing: 1px; opacity: 0.8; margin-bottom: 8px; }
+  .outcome-box p { font-size: 14px; line-height: 1.7; opacity: 0.95; }
+
+  /* File table */
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
+  th { background: var(--blue); color: white; padding: 10px 14px; text-align: left; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; }
+  td { padding: 9px 14px; border-bottom: 1px solid #E2E8F0; vertical-align: top; }
+  tr:nth-child(even) td { background: #F8FAFC; }
+  td code { background: var(--code-bg); color: var(--code-text); padding: 2px 6px; border-radius: 3px; font-size: 12px; font-family: 'Courier New', monospace; }
+
+  /* Sections */
+  h2 { font-size: 22px; font-weight: 800; color: var(--blue-dark); margin: 32px 0 4px; padding-bottom: 8px; border-bottom: 3px solid var(--blue); }
+  h3 { font-size: 16px; font-weight: 700; color: var(--slate); margin: 24px 0 8px; }
+  p { margin: 8px 0; }
+
+  /* Concept block */
+  .concept { border: 1px solid #E2E8F0; border-radius: 8px; margin: 20px 0; overflow: hidden; }
+  .concept-header { background: var(--blue); color: white; padding: 12px 20px; display: flex; align-items: center; gap: 12px; }
+  .concept-header .num { background: rgba(255,255,255,0.25); width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; }
+  .concept-header h3 { margin: 0; font-size: 17px; color: white; }
+  .concept-body { padding: 0; }
+  .concept-part { padding: 14px 20px; border-bottom: 1px solid #E2E8F0; }
+  .concept-part:last-child { border-bottom: none; }
+  .concept-part .part-label { font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--blue); margin-bottom: 6px; text-transform: uppercase; }
+  .concept-part.what .part-label { color: var(--blue); }
+  .concept-part.why .part-label { color: var(--green); }
+  .concept-part.how .part-label { color: var(--amber); }
+  .concept-part.mistake .part-label { color: var(--red); }
+  .concept-part.mistake { background: #FFF5F5; }
+
+  /* Step block */
+  .step { border: 1px solid #E2E8F0; border-radius: 8px; margin: 20px 0; overflow: hidden; }
+  .step-header { background: var(--slate); color: white; padding: 10px 20px; display: flex; align-items: center; gap: 12px; }
+  .step-num { background: var(--blue); color: white; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+  .step-header h4 { margin: 0; font-size: 15px; font-weight: 600; color: white; }
+  .step-body { padding: 16px 20px; }
+
+  /* Code */
+  pre { background: var(--code-bg); color: #E2E8F0; padding: 16px 20px; border-radius: 6px; overflow-x: auto; font-family: 'Courier New', monospace; font-size: 12.5px; line-height: 1.6; margin: 12px 0; }
+  code { font-family: 'Courier New', monospace; font-size: 12px; }
+  .kw { color: #7DD3FC; }
+  .str { color: #86EFAC; }
+  .cmt { color: #6B7280; font-style: italic; }
+  .val { color: #FCA5A5; }
+
+  /* Callouts */
+  .tip { background: #EFF6FF; border-left: 4px solid var(--blue); padding: 12px 16px; border-radius: 4px; margin: 12px 0; font-size: 13px; }
+  .warn-box { background: var(--warn); border-left: 4px solid var(--warn-border); padding: 12px 16px; border-radius: 4px; margin: 12px 0; font-size: 13px; }
+  .success { background: #ECFDF5; border-left: 4px solid var(--green); padding: 12px 16px; border-radius: 4px; margin: 12px 0; font-size: 13px; }
+
+  /* Checklist */
+  .checklist { list-style: none; padding: 0; }
+  .checklist li { padding: 6px 0 6px 28px; position: relative; border-bottom: 1px solid #F1F5F9; }
+  .checklist li::before { content: "☐"; position: absolute; left: 4px; color: var(--blue); font-size: 16px; }
+
+  /* Interview */
+  .qa { border: 1px solid #E2E8F0; border-radius: 8px; margin: 16px 0; overflow: hidden; }
+  .qa-q { background: var(--blue-dark); color: white; padding: 12px 20px; font-weight: 600; font-size: 14px; }
+  .qa-a { background: white; padding: 14px 20px; font-size: 13.5px; color: var(--slate); line-height: 1.7; }
+
+  /* Architecture */
+  .arch-box { background: var(--code-bg); color: #E2E8F0; padding: 20px 24px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 13px; line-height: 2; margin: 16px 0; }
+
+  /* Badge */
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+  .badge-blue { background: #DBEAFE; color: var(--blue-dark); }
+  .badge-green { background: #D1FAE5; color: #065F46; }
+  .badge-amber { background: #FEF3C7; color: #92400E; }
+
+  /* Diff table */
+  .diff-table th:first-child, .diff-table td:first-child { background: #FFF5F5; }
+  .diff-table th:last-child, .diff-table td:last-child { background: #F0FDF4; }
+
+  @media print {
+    body { background: white; font-size: 12px; }
+    .page { padding: 12mm 14mm; max-width: 100%; }
+    .cover { border-radius: 0; padding: 24px 28px; }
+    .cover h1 { font-size: 28px; }
+    pre { font-size: 11px; }
+    h2 { font-size: 18px; page-break-before: always; }
+    h2:first-of-type { page-break-before: avoid; }
+    .concept, .step, .qa { page-break-inside: avoid; }
+    a { color: inherit; text-decoration: none; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- Cover -->
+<div class="cover">
+  <div class="cover-badge">LECTURE 2</div>
+  <h1>Kubernetes</h1>
+  <div class="subtitle">Local Deployment with k3d &nbsp;|&nbsp; ShopList DevOps Training</div>
+  <div class="outcome-box">
+    <div class="label">LECTURE OUTCOME (STRICT)</div>
+    <p>You have 10 Kubernetes manifest files in <code style="background:rgba(255,255,255,0.2);color:white">kubernetes/</code>. A local k3d cluster runs all 3 services. Application code is <strong>unchanged</strong>. No CI/CD pipeline. No registry-pushed images. No Terraform.</p>
+  </div>
+</div>
+
+<!-- File table -->
+<h2>Files This Lecture</h2>
+<table>
+  <tr><th>File</th><th>Kind</th><th>Purpose</th></tr>
+  <tr><td><code>kubernetes/namespace.yml</code></td><td>Namespace</td><td>shoplist namespace</td></tr>
+  <tr><td><code>kubernetes/postgres-secret.yml</code></td><td>Secret</td><td>base64-encoded DB credentials</td></tr>
+  <tr><td><code>kubernetes/postgres-configmap.yml</code></td><td>ConfigMap</td><td>init.sql schema</td></tr>
+  <tr><td><code>kubernetes/postgres-pvc.yml</code></td><td>PersistentVolumeClaim</td><td>1Gi postgres storage</td></tr>
+  <tr><td><code>kubernetes/postgres-deployment.yml</code></td><td>Deployment</td><td>postgres pod + readiness probe</td></tr>
+  <tr><td><code>kubernetes/postgres-service.yml</code></td><td>Service/ClusterIP</td><td>postgres:5432</td></tr>
+  <tr><td><code>kubernetes/backend-deployment.yml</code></td><td>Deployment</td><td>Flask pod + secret env + readiness probe</td></tr>
+  <tr><td><code>kubernetes/backend-service.yml</code></td><td>Service/ClusterIP</td><td>backend:5000</td></tr>
+  <tr><td><code>kubernetes/frontend-deployment.yml</code></td><td>Deployment</td><td>Nginx pod</td></tr>
+  <tr><td><code>kubernetes/frontend-service.yml</code></td><td>Service/NodePort</td><td>:30080 browser access</td></tr>
+</table>
+
+<!-- Architecture -->
+<h2>Architecture</h2>
+<div class="arch-box">
+Browser :30080
+    ↓
+frontend-pod (nginx)         ← NodePort Service
+    ↓ proxy_pass http://backend:5000/
+backend-pod (flask :5000)    ← ClusterIP Service "backend"
+    ↓ DB_HOST=postgres
+postgres-pod (:5432)         ← ClusterIP Service "postgres"
+    ↓
+postgres-pvc (1Gi)           ← survives pod deletion
+</div>
+<div class="tip"><strong>Key insight:</strong> nginx.conf says <code>proxy_pass http://backend:5000/</code> — unchanged from Lecture 1. Kubernetes DNS resolves the Service name "backend" identically to Docker Compose service discovery.</div>
+
+<!-- Prerequisites -->
+<h2>Prerequisites</h2>
+<ul class="checklist">
+  <li>k3d v5.6.0 installed: <code>k3d version</code> shows output</li>
+  <li>kubectl installed: <code>kubectl version --client</code> shows output</li>
+  <li>Docker Desktop running with WSL2 integration enabled</li>
+  <li><code>shoplist-backend:local</code> and <code>shoplist-frontend:local</code> images exist: <code>docker images | grep shoplist</code></li>
+  <li>Port 30080 is free on your machine</li>
+  <li>Branch: <code>feature/lecture-2</code></li>
+</ul>
+
+<!-- Part 1 — Concepts -->
+<h2>Part 1 — Core Concepts</h2>
+
+<div class="concept">
+  <div class="concept-header"><div class="num">1</div><h3>Pod and Deployment</h3></div>
+  <div class="concept-body">
+    <div class="concept-part what"><div class="part-label">WHAT</div>A <strong>Pod</strong> is the smallest deployable unit — one or more containers sharing a network interface. A <strong>Deployment</strong> declares a desired number of pod replicas and manages their lifecycle automatically.</div>
+    <div class="concept-part why"><div class="part-label">WHY</div>Docker Compose has no mechanism for automatic container restart on failure. Kubernetes Deployments implement a control loop: actual state is continuously compared to desired state. If a pod crashes, the Deployment creates a replacement immediately.</div>
+    <div class="concept-part how"><div class="part-label">HOW</div>A Deployment creates a ReplicaSet, which creates and monitors Pods. <code>spec.replicas</code> declares how many pods should run. <code>selector.matchLabels</code> links the Deployment to its pods. Missing pods are created automatically.</div>
+    <div class="concept-part mistake"><div class="part-label">COMMON MISTAKE</div>Running bare pods instead of Deployments. Any pod created without a Deployment is unmanaged — if it crashes, it stays crashed. <strong>Always use Deployments.</strong></div>
+  </div>
+</div>
+
+<div class="concept">
+  <div class="concept-header"><div class="num">2</div><h3>Service</h3></div>
+  <div class="concept-body">
+    <div class="concept-part what"><div class="part-label">WHAT</div>A Service is a stable network endpoint that routes traffic to pods matching a label selector. Services provide fixed DNS names and IP addresses that remain constant even as pod IPs change.</div>
+    <div class="concept-part why"><div class="part-label">WHY</div>Pods are ephemeral — when a pod restarts, it gets a new IP. Services solve this with a stable name. <code>nginx.conf</code> with <code>proxy_pass http://backend:5000/</code> works unchanged because "backend" always resolves to the current backend pod via the Service.</div>
+    <div class="concept-part how"><div class="part-label">HOW</div>
+      <table><tr><th>Type</th><th>Reachable From</th><th>Used In ShopList</th></tr>
+      <tr><td>ClusterIP (default)</td><td>Inside cluster only</td><td>postgres, backend</td></tr>
+      <tr><td>NodePort</td><td>Host machine via port 30000–32767</td><td>frontend (:30080)</td></tr>
+      <tr><td>LoadBalancer</td><td>External IP (cloud)</td><td>Lecture 4 only</td></tr></table>
+    </div>
+    <div class="concept-part mistake"><div class="part-label">COMMON MISTAKE</div>Referring to pods by IP address. Pod IPs are ephemeral and change on every restart. Always use the Service name for inter-pod communication.</div>
+  </div>
+</div>
+
+<div class="concept">
+  <div class="concept-header"><div class="num">3</div><h3>PersistentVolumeClaim</h3></div>
+  <div class="concept-body">
+    <div class="concept-part what"><div class="part-label">WHAT</div>A PVC is a request for persistent storage. Kubernetes binds it to a PersistentVolume. The PVC — and its data — survives pod deletions.</div>
+    <div class="concept-part why"><div class="part-label">WHY</div>Container filesystems are ephemeral. When a pod is deleted, its filesystem is destroyed. PVCs separate the storage lifecycle from the pod lifecycle. The PVC exists independently of any pod until explicitly deleted.</div>
+    <div class="concept-part how"><div class="part-label">HOW</div>Declare a PVC with a size (1Gi) and access mode (ReadWriteOnce). Mount it in the pod spec at <code>/var/lib/postgresql/data</code>. When the pod is deleted, the PVC remains. The replacement pod mounts the same PVC and finds all data intact.</div>
+    <div class="concept-part mistake"><div class="part-label">COMMON MISTAKE</div>Confusing pod deletion with data loss. Deleting a pod in Kubernetes is safe — the Deployment creates a replacement that mounts the same PVC. To permanently delete data: <code>kubectl delete pvc postgres-pvc -n shoplist</code>. This is the equivalent of <code>docker compose down -v</code>.</div>
+  </div>
+</div>
+
+<div class="concept">
+  <div class="concept-header"><div class="num">4</div><h3>Secret</h3></div>
+  <div class="concept-body">
+    <div class="concept-part what"><div class="part-label">WHAT</div>A Secret stores sensitive data — passwords, tokens, keys — in base64-encoded form, separately from other configuration, with independent RBAC access control.</div>
+    <div class="concept-part why"><div class="part-label">WHY</div>Secrets can be restricted via Kubernetes RBAC — only specific service accounts need read access. ConfigMaps are readable by everyone in the namespace. The separation enables least-privilege access control.</div>
+    <div class="concept-part how"><div class="part-label">HOW</div><pre>echo -n "shoppass" | base64      # → c2hvcHBhc3M=
+echo "c2hvcHBhc3M=" | base64 -d  # → shoppass</pre>Secret values are base64-encoded strings, not encrypted. They can be mounted as environment variables or files.</div>
+    <div class="concept-part mistake"><div class="part-label">COMMON MISTAKE</div>Thinking base64 is encryption — it is not. The security comes from RBAC restricting who can read the Secret object, not from the encoding. <strong>Never commit Secret YAML files to git.</strong></div>
+  </div>
+</div>
+
+<div class="concept">
+  <div class="concept-header"><div class="num">5</div><h3>ConfigMap</h3></div>
+  <div class="concept-body">
+    <div class="concept-part what"><div class="part-label">WHAT</div>A ConfigMap stores non-sensitive configuration — text files, key-value pairs — that can be mounted into pods as environment variables or as files on the filesystem.</div>
+    <div class="concept-part why"><div class="part-label">WHY</div>Hardcoding configuration inside images means rebuilding for every configuration change. ConfigMaps allow images to be generic and reusable — configuration is provided at runtime.</div>
+    <div class="concept-part how"><div class="part-label">HOW</div>In ShopList, <code>postgres-init</code> ConfigMap contains <code>init.sql</code>. It is mounted at <code>/docker-entrypoint-initdb.d</code>. PostgreSQL runs all <code>.sql</code> files in that directory on first startup.</div>
+    <div class="concept-part mistake"><div class="part-label">COMMON MISTAKE</div>Putting secrets in ConfigMaps because it is simpler. ConfigMaps are readable by any pod and user in the namespace. Database passwords and API keys must always go in Secrets.</div>
+  </div>
+</div>
+
+<div class="concept">
+  <div class="concept-header"><div class="num">6</div><h3>Namespace</h3></div>
+  <div class="concept-body">
+    <div class="concept-part what"><div class="part-label">WHAT</div>A Namespace is a logical partition within a Kubernetes cluster that provides isolated scopes for names, access control, and resource quotas. All ShopList resources live in <code>shoplist</code>.</div>
+    <div class="concept-part why"><div class="part-label">WHY</div>Without namespaces, all resources in a cluster share one flat scope — naming collisions and impossible per-application access control. Namespaces enable multi-tenant clusters.</div>
+    <div class="concept-part how"><div class="part-label">HOW</div>Every kubectl command requires <code>-n shoplist</code> to target the correct namespace. The Service DNS name "postgres" works within the shoplist namespace. Cross-namespace DNS requires a fully qualified name.</div>
+    <div class="concept-part mistake"><div class="part-label">COMMON MISTAKE</div>Forgetting <code>-n shoplist</code> on kubectl commands. Without it, kubectl targets the <code>default</code> namespace (empty). Nothing appears. Every kubectl command in this lecture must include <code>-n shoplist</code>.</div>
+  </div>
+</div>
+
+<!-- Part 2 — Steps -->
+<h2>Part 2 — Step-by-Step Instructions</h2>
+
+<div class="step">
+  <div class="step-header"><div class="step-num">Step 1</div><h4>Create the k3d cluster</h4></div>
+  <div class="step-body">
+    <pre>k3d cluster create shoplist --port "30080:30080@loadbalancer"</pre>
+    <p>The <code>--port</code> flag maps host port 30080 to the cluster's load balancer.</p>
+    <pre>kubectl cluster-info
+kubectl get nodes</pre>
+    <p class="success" style="padding:10px 14px;border-radius:4px;background:#ECFDF5;border-left:4px solid #10B981;"><strong>Expected:</strong> One node in <code>Ready</code> state.</p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header"><div class="step-num">Step 2</div><h4>Import Docker images into k3d</h4></div>
+  <div class="step-body">
+    <pre>k3d image import shoplist-backend:local shoplist-frontend:local -c shoplist</pre>
+    <p>k3d runs inside Docker and has its own image cache. Images must be imported explicitly because the manifests use <code>imagePullPolicy: Never</code> — without this, pods show <code>ErrImageNeverPull</code>.</p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header"><div class="step-num">Step 3</div><h4>namespace.yml</h4></div>
+  <div class="step-body">
+    <pre><span class="kw">apiVersion:</span> <span class="str">v1</span>
+<span class="kw">kind:</span> <span class="str">Namespace</span>
+<span class="kw">metadata:</span>
+  <span class="kw">name:</span> <span class="str">shoplist</span></pre>
+    <pre>kubectl apply -f kubernetes/namespace.yml</pre>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header"><div class="step-num">Step 4</div><h4>postgres-secret.yml</h4></div>
+  <div class="step-body">
+    <pre><span class="kw">apiVersion:</span> <span class="str">v1</span>
+<span class="kw">kind:</span> <span class="str">Secret</span>
+<span class="kw">metadata:</span>
+  <span class="kw">name:</span> <span class="str">postgres-secret</span>
+  <span class="kw">namespace:</span> <span class="str">shoplist</span>
+<span class="kw">type:</span> <span class="str">Opaque</span>
+<span class="kw">data:</span>
+  <span class="kw">POSTGRES_DB:</span>       <span class="val">c2hvcGxpc3Q=</span>   <span class="cmt"># shoplist</span>
+  <span class="kw">POSTGRES_USER:</span>     <span class="val">c2hvcHVzZXI=</span>   <span class="cmt"># shopuser</span>
+  <span class="kw">POSTGRES_PASSWORD:</span> <span class="val">c2hvcHBhc3M=</span>   <span class="cmt"># shoppass</span></pre>
+    <pre>kubectl apply -f kubernetes/postgres-secret.yml</pre>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header"><div class="step-num">Step 5</div><h4>postgres-configmap.yml</h4></div>
+  <div class="step-body">
+    <pre><span class="kw">apiVersion:</span> <span class="str">v1</span>
+<span class="kw">kind:</span> <span class="str">ConfigMap</span>
+<span class="kw">metadata:</span>
+  <span class="kw">name:</span> <span class="str">postgres-init</span>
+  <span class="kw">namespace:</span> <span class="str">shoplist</span>
+<span class="kw">data:</span>
+  <span class="kw">init.sql:</span> |
+    CREATE TABLE IF NOT EXISTS products (
+        id     SERIAL PRIMARY KEY,
+        name   VARCHAR(100) NOT NULL,
+        price  NUMERIC(10, 2) NOT NULL
+    );</pre>
+    <pre>kubectl apply -f kubernetes/postgres-configmap.yml</pre>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header"><div class="step-num">Step 6</div><h4>postgres-pvc.yml</h4></div>
+  <div class="step-body">
+    <pre><span class="kw">apiVersion:</span> <span class="str">v1</span>
+<span class="kw">kind:</span> <span class="str">PersistentVolumeClaim</span>
+<span class="kw">metadata:</span>
+  <span class="kw">name:</span> <span class="str">postgres-pvc</span>
+  <span class="kw">namespace:</span> <span class="str">shoplist</span>
+<span class="kw">spec:</span>
+  <span class="kw">accessModes:</span>
+    - <span class="str">ReadWriteOnce</span>
+  <span class="kw">resources:</span>
+    <span class="kw">requests:</span>
+      <span class="kw">storage:</span> <span class="str">1Gi</span></pre>
+    <pre>kubectl apply -f kubernetes/postgres-pvc.yml
+kubectl get pvc -n shoplist   # should show: Bound</pre>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header"><div class="step-num">Steps 7–8</div><h4>postgres-deployment.yml + postgres-service.yml</h4></div>
+  <div class="step-body">
+    <div class="warn-box"><strong>Key fields:</strong> <code>envFrom: secretRef</code> injects all Secret keys as env vars. <code>readinessProbe</code> runs <code>pg_isready</code> — pod only receives traffic when PostgreSQL is ready. Two volumeMounts: PVC at data dir, ConfigMap at init dir.</div>
+    <pre>kubectl apply -f kubernetes/postgres-deployment.yml
+kubectl apply -f kubernetes/postgres-service.yml
+kubectl get pods -n shoplist -w    # wait for 1/1 Running</pre>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header"><div class="step-num">Steps 9–10</div><h4>backend-deployment.yml + backend-service.yml</h4></div>
+  <div class="step-body">
+    <div class="warn-box"><strong>Key fields:</strong> <code>imagePullPolicy: Never</code> — use only locally imported images. <code>DB_HOST: postgres</code> — resolves via Kubernetes DNS to the postgres Service ClusterIP. Env vars sourced from Secret via <code>secretKeyRef</code>.</div>
+    <pre>kubectl apply -f kubernetes/backend-deployment.yml
+kubectl apply -f kubernetes/backend-service.yml</pre>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header"><div class="step-num">Steps 11–12</div><h4>frontend + Verify everything</h4></div>
+  <div class="step-body">
+    <pre>kubectl apply -f kubernetes/frontend-deployment.yml
+kubectl apply -f kubernetes/frontend-service.yml
+
+kubectl get all -n shoplist</pre>
+    <p><strong>Expected — all 3 pods 1/1 Running. Test:</strong></p>
+    <pre>curl -s http://localhost:30080/api/health
+
+curl -s -X POST http://localhost:30080/api/products \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Laptop", "price": 999.00}'
+
+curl -s http://localhost:30080/api/products</pre>
+    <p><strong>Test persistence:</strong></p>
+    <pre>kubectl delete pod -n shoplist -l app=postgres
+kubectl get pods -n shoplist -w
+curl http://localhost:30080/api/products   # data should still be there</pre>
+  </div>
+</div>
+
+<!-- Interview Q&A -->
+<h2>Interview Questions</h2>
+
+<div class="qa">
+  <div class="qa-q">Q1: What is the difference between a Pod and a Deployment in Kubernetes?</div>
+  <div class="qa-a">A Pod is a single running instance of one or more containers. A Deployment declares a desired number of pod replicas and manages their lifecycle — automatically creating replacement pods when existing ones fail. You always use Deployments, never bare pods, because bare pods have no restart mechanism.</div>
+</div>
+<div class="qa">
+  <div class="qa-q">Q2: What is the difference between a ClusterIP and a NodePort Service?</div>
+  <div class="qa-a">ClusterIP (the default) makes a Service reachable only from inside the cluster. NodePort exposes the Service on a specific port (30000–32767) on the cluster node, making it reachable from the host machine. We use NodePort only for the frontend; backend and postgres use ClusterIP.</div>
+</div>
+<div class="qa">
+  <div class="qa-q">Q3: Why do we use a Secret instead of a ConfigMap for database credentials?</div>
+  <div class="qa-a">Secrets can be access-controlled independently via Kubernetes RBAC — you can restrict which users and service accounts can read them. ConfigMaps are readable by any pod and user in the namespace. Note: base64 encoding is not encryption. The protection comes from access control, not from the encoding.</div>
+</div>
+<div class="qa">
+  <div class="qa-q">Q4: What is the purpose of a PVC, and what happens to it when a pod is deleted?</div>
+  <div class="qa-a">A PVC is a request for persistent storage that exists independently of any pod. When a pod is deleted, the PVC is not deleted — the Deployment creates a replacement pod that mounts the same PVC and finds all data intact. To permanently delete the data, you must explicitly run <code>kubectl delete pvc postgres-pvc -n shoplist</code>.</div>
+</div>
+<div class="qa">
+  <div class="qa-q">Q5: What does imagePullPolicy: Never do and why is it required with k3d?</div>
+  <div class="qa-a">It tells Kubernetes to never attempt to pull the image from a registry — use only what is already available in the cluster's local image cache. With k3d, images must be imported into the cluster with <code>k3d image import</code> before deploying. Without this setting, Kubernetes tries to pull from Docker Hub, fails, and the pod shows <code>ErrImageNeverPull</code>.</div>
+</div>
+
+</div>
+
+<!-- Appendix: Minikube -->
+<h2>Appendix — Windows: Using Minikube Instead of k3d</h2>
+
+<div class="tip"><strong>Who this is for:</strong> Windows students who cannot use k3d (e.g. WSL2 is disabled on a corporate laptop). All 10 manifest files and all kubectl commands are unchanged. Only cluster setup, image loading, and browser access differ.</div>
+
+<h3>Install Minikube</h3>
+<p>Open PowerShell as Administrator:</p>
+<pre>winget install minikube</pre>
+<p>Verify: <code>minikube version</code></p>
+
+<h3>Start the Cluster</h3>
+<pre>minikube start</pre>
+<p>Minikube auto-selects a driver (Docker, Hyper-V, or VirtualBox). First run downloads ~300MB — takes 1–3 minutes once.</p>
+
+<h3>Load Images (instead of k3d image import)</h3>
+<p><strong>Option A — build directly inside Minikube's Docker (recommended):</strong></p>
+<pre># Point your shell at Minikube's Docker daemon:
+minikube docker-env | Invoke-Expression
+
+# Then build:
+docker build -t shoplist-backend:local app/backend/
+docker build -t shoplist-frontend:local app/frontend/</pre>
+
+<p><strong>Option B — load pre-built images:</strong></p>
+<pre>minikube image load shoplist-backend:local
+minikube image load shoplist-frontend:local</pre>
+
+<div class="warn-box"><code>imagePullPolicy: Never</code> is already set in the manifests — no YAML changes needed.</div>
+
+<h3>Apply Manifests</h3>
+<p>Identical to the main guide — run all 10 <code>kubectl apply</code> commands exactly as written in Steps 3–11.</p>
+
+<h3>Access the Application</h3>
+<p>NodePort services are not directly reachable on <code>localhost:30080</code> with minikube. Use:</p>
+<pre># Opens browser automatically to the correct URL:
+minikube service frontend -n shoplist</pre>
+<p>Or for full localhost access (run in a separate admin terminal and keep it open):</p>
+<pre>minikube tunnel
+# Then: http://localhost:30080 works as in the main guide</pre>
+
+<h3>Command Reference</h3>
+<table>
+  <tr><th>k3d (main guide)</th><th>Minikube (Windows)</th></tr>
+  <tr><td><code>k3d cluster create shoplist --port "30080:30080@loadbalancer"</code></td><td><code>minikube start</code></td></tr>
+  <tr><td><code>k3d image import shoplist-backend:local -c shoplist</code></td><td><code>minikube image load shoplist-backend:local</code></td></tr>
+  <tr><td><code>http://localhost:30080</code></td><td><code>minikube service frontend -n shoplist</code></td></tr>
+  <tr><td><code>k3d cluster delete shoplist</code></td><td><code>minikube delete</code></td></tr>
+</table>
+
+</div>
+</body>
+</html>

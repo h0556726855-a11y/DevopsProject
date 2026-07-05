@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lecture 3 — CI/CD Pipelines | Student Workbook</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f1f5f9; color: #1e293b; line-height: 1.6; }
+    .header { background: linear-gradient(135deg, #1d4ed8 0%, #2563EB 100%); color: white; padding: 3rem 2rem 2rem; text-align: center; }
+    .header h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .header .subtitle { font-size: 1.1rem; opacity: 0.85; margin-bottom: 1rem; }
+    .badge-row { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; margin-top: 1rem; }
+    .badge { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); border-radius: 999px; padding: 0.3rem 1rem; font-size: 0.85rem; }
+    .container { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
+    .outcome-box { background: white; border-left: 5px solid #2563EB; border-radius: 8px; padding: 1.5rem 2rem; margin: 2rem 0; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .outcome-box h2 { color: #1d4ed8; font-size: 1.2rem; margin-bottom: 1rem; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th { background: #eff6ff; color: #1d4ed8; text-align: left; padding: 0.6rem 0.8rem; border-bottom: 2px solid #bfdbfe; }
+    td { padding: 0.6rem 0.8rem; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+    tr:hover td { background: #f8fafc; }
+    .section { background: white; border-radius: 10px; padding: 2rem; margin: 2rem 0; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .section h2 { color: #1d4ed8; font-size: 1.4rem; border-bottom: 2px solid #bfdbfe; padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
+    .section h3 { color: #1e40af; font-size: 1.1rem; margin: 1.5rem 0 0.5rem; }
+    .concept-card { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 1.25rem; margin: 1rem 0; }
+    .concept-card .label { font-size: 0.75rem; font-weight: 700; color: #2563EB; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.4rem; }
+    .concept-card p { font-size: 0.95rem; color: #334155; margin-top: 0.4rem; }
+    .mistake { background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 0.75rem 1rem; margin-top: 0.75rem; font-size: 0.88rem; color: #991b1b; }
+    .mistake strong { color: #dc2626; }
+    pre { background: #0f172a; color: #e2e8f0; border-radius: 8px; padding: 1.25rem; overflow-x: auto; font-size: 0.85rem; line-height: 1.6; margin: 1rem 0; }
+    code { font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace; }
+    pre code { color: #e2e8f0; }
+    .inline-code { background: #eff6ff; color: #1d4ed8; padding: 0.1rem 0.4rem; border-radius: 4px; font-family: 'Cascadia Code', monospace; font-size: 0.875em; }
+    .step { counter-increment: step; display: flex; gap: 1.25rem; margin: 1.5rem 0; align-items: flex-start; }
+    .step-num { background: #2563EB; color: white; width: 2rem; height: 2rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem; flex-shrink: 0; margin-top: 0.1rem; }
+    .step-content { flex: 1; }
+    .step-content h4 { color: #1e293b; font-size: 1rem; margin-bottom: 0.5rem; }
+    .expected { background: #f0fdf4; border: 1px solid #86efac; border-radius: 6px; padding: 0.75rem 1rem; margin: 0.5rem 0; }
+    .expected .label { font-size: 0.75rem; font-weight: 700; color: #16a34a; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.25rem; }
+    .prereq-list { list-style: none; }
+    .prereq-list li { padding: 0.4rem 0; display: flex; align-items: center; gap: 0.6rem; }
+    .prereq-list li::before { content: "☐"; font-size: 1.1rem; color: #2563EB; }
+    .qa-item { border-left: 3px solid #2563EB; padding: 0.5rem 0 0.5rem 1rem; margin: 1.25rem 0; }
+    .qa-item .q { font-weight: 600; color: #1e293b; margin-bottom: 0.4rem; }
+    .qa-item .a { color: #475569; font-size: 0.95rem; }
+    .diagram { background: #0f172a; color: #94a3b8; border-radius: 8px; padding: 1.5rem; font-family: monospace; font-size: 0.82rem; line-height: 1.7; overflow-x: auto; margin: 1rem 0; }
+    footer { text-align: center; color: #94a3b8; font-size: 0.85rem; padding: 2rem; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Lecture 3 — CI/CD Pipelines</h1>
+  <p class="subtitle">ShopList DevOps Training &bull; Student Workbook</p>
+  <div class="badge-row">
+    <span class="badge">3 hours</span>
+    <span class="badge">1 new file</span>
+    <span class="badge">2 modified files</span>
+    <span class="badge">Course Module Template v1.0</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="outcome-box">
+    <h2>Lecture Outcome (STRICT)</h2>
+    <table>
+      <thead><tr><th>File</th><th>Change</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td><code class="inline-code">.gitlab-ci.yml</code></td><td>New</td><td>CI/CD pipeline (GitLab) — build + verify stages</td></tr>
+        <tr><td><code class="inline-code">.github/workflows/build-and-push.yml</code></td><td>New</td><td>CI/CD pipeline (GitHub Actions) — equivalent workflow</td></tr>
+        <tr><td><code class="inline-code">kubernetes/backend-deployment.yml</code></td><td>Modified</td><td>image: updated to registry path + SHA</td></tr>
+        <tr><td><code class="inline-code">kubernetes/frontend-deployment.yml</code></td><td>Modified</td><td>image: updated to registry path + SHA</td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top:1rem; font-size:0.9rem; color:#475569;">Application code, Dockerfiles, Nginx config, Terraform, and Ansible are <strong>not touched</strong> in this lecture.</p>
+  </div>
+
+  <div class="section">
+    <h2>Prerequisites</h2>
+    <ul class="prereq-list">
+      <li>GitLab account with project <code class="inline-code">devops-tikshuv-project</code> accessible</li>
+      <li>GitLab Container Registry enabled (Settings → General → Visibility)</li>
+      <li>A runner available (Settings → CI/CD → Runners)</li>
+      <li>k3d cluster running: <code class="inline-code">kubectl get pods -n shoplist</code> → 3 Running</li>
+      <li>Application accessible at <code class="inline-code">http://localhost:30080</code></li>
+      <li>On branch <code class="inline-code">feature/lecture-3</code></li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>Core Concepts</h2>
+
+    <div class="concept-card">
+      <div class="label">Concept 1 — CI/CD</div>
+      <p><strong>What it is:</strong> Continuous Integration means every git push triggers an automated build and test. Continuous Delivery means passing builds are automatically packaged and pushed to a registry.</p>
+      <p><strong>Why it exists:</strong> After Lecture 2, deploying a code change requires 4 manual steps. CI/CD replaces 3 of them with one git push. The remaining manual step (kubectl apply) is automated in Lecture 4.</p>
+      <p><strong>How it works:</strong> GitLab reads <code class="inline-code">.gitlab-ci.yml</code> on every push, creates a pipeline, and dispatches jobs to runners. Each job runs in a fresh container, executes its script, and reports pass/fail.</p>
+      <div class="mistake"><strong>Common mistake:</strong> Thinking CI/CD means automatic deployment. After this lecture, push is automated; kubectl apply is still manual.</div>
+    </div>
+
+    <div class="concept-card">
+      <div class="label">Concept 2 — GitLab Runner</div>
+      <p><strong>What it is:</strong> A process that picks up pipeline jobs and executes them in isolated containers.</p>
+      <p><strong>Why it exists:</strong> GitLab orchestrates pipelines but doesn't execute jobs. Runners are the execution layer — they can run on any machine.</p>
+      <p><strong>How it works:</strong> Runner picks up a queued job, starts a container from <code class="inline-code">image:</code>, clones the repo, runs <code class="inline-code">script:</code> steps, reports exit code. Container is destroyed when done.</p>
+      <div class="mistake"><strong>Common mistake:</strong> Expecting the image from one job to be available in the next. Each job = fresh container. State does not persist between jobs.</div>
+    </div>
+
+    <div class="concept-card">
+      <div class="label">Concept 3 — Docker-in-Docker (dind)</div>
+      <p><strong>What it is:</strong> A Docker daemon running inside a Docker container, enabling CI jobs to run docker build inside a pipeline.</p>
+      <p><strong>Why it exists:</strong> A GitLab job runs inside a container (<code class="inline-code">image: docker:24</code>), which has the Docker CLI but no daemon. <code class="inline-code">services: - docker:24-dind</code> adds the daemon as a sidecar.</p>
+      <p><strong>How it works:</strong> The dind sidecar starts a daemon; GitLab sets DOCKER_HOST so the CLI connects to it. All docker commands in the script run against this daemon.</p>
+      <div class="mistake"><strong>Common mistake:</strong> Forgetting <code class="inline-code">services: - docker:24-dind</code>. Result: <em>Cannot connect to the Docker daemon at unix:///var/run/docker.sock.</em></div>
+    </div>
+
+    <div class="concept-card">
+      <div class="label">Concept 4 — Container Registry</div>
+      <p><strong>What it is:</strong> A server that stores and serves Docker images by name and tag. GitLab's built-in registry is at <code class="inline-code">registry.gitlab.com/[group]/[project]/[image]:[tag]</code>.</p>
+      <p><strong>Why it exists:</strong> Without a registry, images exist only on the machine that built them. The registry makes images accessible to any machine — including Kubernetes clusters — without local imports.</p>
+      <p><strong>How it works:</strong> <code class="inline-code">docker login</code> → <code class="inline-code">docker push</code> uploads. Kubernetes pulls via the image: field in the deployment manifest.</p>
+      <div class="mistake"><strong>Common mistake:</strong> Running docker push without docker login first. Result: <em>denied: access forbidden</em>.</div>
+    </div>
+
+    <div class="concept-card">
+      <div class="label">Concept 5 — SHA Image Tagging</div>
+      <p><strong>What it is:</strong> Using the git commit's 8-character SHA as the Docker image tag via <code class="inline-code">$CI_COMMIT_SHORT_SHA</code>, instead of <code class="inline-code">:latest</code>.</p>
+      <p><strong>Why it exists:</strong> <code class="inline-code">:latest</code> is overwritten on every push. SHA tags are permanent and unique — each image tag points to exactly one commit.</p>
+      <p><strong>How it works:</strong> GitLab sets <code class="inline-code">$CI_COMMIT_SHORT_SHA</code> to the first 8 hex chars of the commit hash. Setting <code class="inline-code">IMAGE_TAG: $CI_COMMIT_SHORT_SHA</code> makes it available to all jobs.</p>
+      <div class="mistake"><strong>Common mistake:</strong> Using <code class="inline-code">:latest</code>. After 10 pushes, all 10 images share one tag — no traceability, no rollback.</div>
+    </div>
+
+  </div>
+
+  <div class="section">
+    <h2>What You Build — Pipeline Flow</h2>
+    <div class="diagram">
+git push (feature/lecture-3 or dev)
+         ↓
+.gitlab-ci.yml read by GitLab
+         ↓
+┌─────────────────────────────────────────────┐
+│ stage: build                                │
+│   build-backend  (docker build → backend)   │
+│   build-frontend (docker build → frontend)  │
+└─────────────────────────────────────────────┘
+         ↓
+┌─────────────────────────────────────────────┐
+│ stage: test                                 │
+│   test-backend   (dependency import check)  │
+└─────────────────────────────────────────────┘
+         ↓  (only on dev / main)
+┌─────────────────────────────────────────────┐
+│ stage: push                                 │
+│   push-images    (docker login + push both) │
+└─────────────────────────────────────────────┘
+         ↓
+GitLab Container Registry
+registry.gitlab.com/.../backend:[sha]
+registry.gitlab.com/.../frontend:[sha]
+         ↓ (manual kubectl apply)
+k3d cluster — pods use registry images
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Step-by-Step Instructions</h2>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <h4>Enable Container Registry and verify runner</h4>
+        <p>GitLab → Settings → General → Visibility → Container Registry → Enabled.<br>
+        GitLab → Settings → CI/CD → Runners → at least one shared runner visible.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <h4>Create .gitlab-ci.yml with stages and variables</h4>
+        <pre><code>stages:
+  - build
+  - test
+  - push
+
+variables:
+  BACKEND_IMAGE: $CI_REGISTRY_IMAGE/backend
+  FRONTEND_IMAGE: $CI_REGISTRY_IMAGE/frontend
+  IMAGE_TAG: $CI_COMMIT_SHORT_SHA</code></pre>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <h4>Add the build stage</h4>
+        <pre><code>build-backend:
+  stage: build
+  image: docker:24
+  services:
+    - docker:24-dind
+  script:
+    - docker build -t $BACKEND_IMAGE:$IMAGE_TAG app/backend/
+
+build-frontend:
+  stage: build
+  image: docker:24
+  services:
+    - docker:24-dind
+  script:
+    - docker build -t $FRONTEND_IMAGE:$IMAGE_TAG app/frontend/</code></pre>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <h4>Add the test stage</h4>
+        <pre><code>test-backend:
+  stage: test
+  image: docker:24
+  services:
+    - docker:24-dind
+  script:
+    - docker build -t $BACKEND_IMAGE:$IMAGE_TAG app/backend/
+    - docker run --rm $BACKEND_IMAGE:$IMAGE_TAG python -c "from flask import Flask; import psycopg2; print('All dependencies OK')"</code></pre>
+        <div class="expected"><div class="label">Expected output</div><code>All dependencies OK</code></div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-content">
+        <h4>Add the push stage</h4>
+        <pre><code>push-images:
+  stage: push
+  image: docker:24
+  services:
+    - docker:24-dind
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker build -t $BACKEND_IMAGE:$IMAGE_TAG app/backend/
+    - docker build -t $FRONTEND_IMAGE:$IMAGE_TAG app/frontend/
+    - docker push $BACKEND_IMAGE:$IMAGE_TAG
+    - docker push $FRONTEND_IMAGE:$IMAGE_TAG
+  only:
+    - dev
+    - main</code></pre>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">6</div>
+      <div class="step-content">
+        <h4>Push to feature branch and verify pipeline</h4>
+        <pre><code>git add .gitlab-ci.yml
+git commit -m "ci: add GitLab CI/CD pipeline with build, test, push stages"
+git push origin feature/lecture-3</code></pre>
+        <div class="expected"><div class="label">Expected pipeline result</div>
+build-backend ✓ &bull; build-frontend ✓ &bull; test-backend ✓ &bull; push-images — (skipped)</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">7</div>
+      <div class="step-content">
+        <h4>Merge to dev — trigger full pipeline with push</h4>
+        <pre><code>git checkout dev
+git merge feature/lecture-3
+git push origin dev</code></pre>
+        <div class="expected"><div class="label">Expected pipeline result</div>
+All 4 jobs: build-backend ✓ build-frontend ✓ test-backend ✓ push-images ✓</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">8</div>
+      <div class="step-content">
+        <h4>Update Kubernetes manifests</h4>
+        <p>In both <code class="inline-code">kubernetes/backend-deployment.yml</code> and <code class="inline-code">kubernetes/frontend-deployment.yml</code>, update the image and pull policy:</p>
+        <pre><code>image: registry.gitlab.com/YOUR_GROUP/devops-tikshuv-project/backend:YOUR_SHA
+imagePullPolicy: Always</code></pre>
+        <p>Replace YOUR_GROUP and YOUR_SHA with values from the GitLab Container Registry and <code class="inline-code">git log --oneline -1</code>.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">9</div>
+      <div class="step-content">
+        <h4>Apply and verify</h4>
+        <pre><code>kubectl apply -f kubernetes/backend-deployment.yml
+kubectl apply -f kubernetes/frontend-deployment.yml
+kubectl rollout status deployment/backend -n shoplist
+kubectl rollout status deployment/frontend -n shoplist
+kubectl describe pod -n shoplist -l app=backend | grep Image:
+curl http://localhost:30080/api/health</code></pre>
+        <div class="expected"><div class="label">Expected</div>Rollout successful. Image: shows registry.gitlab.com/... Health check: {"status": "ok"}</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="section">
+    <h2>Interview Questions</h2>
+
+    <div class="qa-item">
+      <div class="q">Q: What is the difference between CI and CD?</div>
+      <div class="a">CI — Continuous Integration — means every commit triggers automated build and test. CD — Continuous Delivery — means passing builds are automatically packaged and deployed. In this lecture we implement CI (build + test) and the push to registry (first half of CD). Automated kubectl apply is CD's second half — Lecture 4.</div>
+    </div>
+
+    <div class="qa-item">
+      <div class="q">Q: What does $CI_COMMIT_SHORT_SHA contain, and why use it instead of :latest?</div>
+      <div class="a">It contains the first 8 characters of the git commit hash. Using it as the image tag means every commit produces a permanent, uniquely identified image. With :latest, every push overwrites the same tag — you lose the ability to trace which code is running and cannot roll back to a specific version.</div>
+    </div>
+
+    <div class="qa-item">
+      <div class="q">Q: What is Docker-in-Docker, and why is it required?</div>
+      <div class="a">Docker-in-Docker is a Docker daemon running inside a container. A GitLab CI job runs inside docker:24 (has Docker CLI) but has no daemon by default. Adding services: - docker:24-dind starts a daemon as a sidecar. Without it, docker build fails with "Cannot connect to the Docker daemon."</div>
+    </div>
+
+    <div class="qa-item">
+      <div class="q">Q: After pushing a new image to the registry, what commands update the running Kubernetes pod?</div>
+      <div class="a">(1) Update image: in the deployment YAML with the new registry path and SHA. (2) kubectl apply -f kubernetes/[service]-deployment.yml. (3) kubectl rollout status deployment/[service] -n shoplist to confirm completion.</div>
+    </div>
+
+    <div class="qa-item">
+      <div class="q">Q: What is the purpose of the test stage, and why must it precede push?</div>
+      <div class="a">The test stage verifies the image is internally valid (pip install succeeded) before it enters the registry. It runs an import check inside the built image. It precedes push because the pipeline's guarantee is: only valid artifacts reach the registry. A broken image that never enters the registry cannot be accidentally deployed.</div>
+    </div>
+
+  </div>
+
+</div>
+
+  <div class="section" id="github-appendix">
+    <h2>Appendix G — GitHub Actions (Alternative to GitLab CI)</h2>
+    <p style="color:#475569;margin-bottom:1rem;">Use this appendix if your project is hosted on GitHub instead of GitLab. The concepts are identical — see <strong>cicd-primer.html</strong> for the side-by-side comparison. Only the file location, YAML syntax, and registry URL differ.</p>
+
+    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:1rem 1.25rem;margin-bottom:1.25rem;">
+      <p style="font-size:0.85rem;font-weight:700;color:#1d4ed8;margin-bottom:0.5rem;">The workflow file already exists in this repo</p>
+      <p style="font-size:0.9rem;color:#334155;">
+        <code class="inline-code">.github/workflows/build-and-push.yml</code> — you do not need to write it from scratch. It is the GitHub equivalent of <code class="inline-code">.gitlab-ci.yml</code>.
+      </p>
+    </div>
+
+    <h3>G1 — Platform Comparison</h3>
+    <table>
+      <thead><tr><th></th><th>GitLab CI</th><th>GitHub Actions</th></tr></thead>
+      <tbody>
+        <tr><td>Pipeline file</td><td><code class="inline-code">.gitlab-ci.yml</code></td><td><code class="inline-code">.github/workflows/build-and-push.yml</code></td></tr>
+        <tr><td>Registry</td><td><code class="inline-code">registry.gitlab.com/[group]/[project]</code></td><td><code class="inline-code">ghcr.io/[owner]</code></td></tr>
+        <tr><td>Short SHA</td><td><code class="inline-code">$CI_COMMIT_SHORT_SHA</code> (auto)</td><td><code class="inline-code">${GITHUB_SHA::8}</code> (set via $GITHUB_ENV)</td></tr>
+        <tr><td>Credentials</td><td><code class="inline-code">$CI_REGISTRY_USER / $CI_REGISTRY_PASSWORD</code></td><td><code class="inline-code">${{ secrets.GITHUB_TOKEN }}</code> (auto)</td></tr>
+        <tr><td>Docker daemon</td><td><code class="inline-code">services: docker:24-dind</code> required</td><td>included in ubuntu-latest runner</td></tr>
+      </tbody>
+    </table>
+
+    <h3>G2 — Enable package write permissions</h3>
+    <p>GitHub → your repo → <strong>Settings → Actions → General → Workflow permissions</strong> → select <strong>"Read and write permissions"</strong> → Save.</p>
+    <div class="mistake"><strong>Without this:</strong> the push step fails with <code>denied: installation not allowed to Write organization package</code>.</div>
+
+    <h3>G3 — Push and observe the pipeline</h3>
+    <pre><code>git add .github/workflows/build-and-push.yml
+git commit -m "ci: add GitHub Actions workflow for build and push"
+git push origin main</code></pre>
+    <p>Open <strong>GitHub → your repo → Actions tab</strong>. Watch the three jobs run.</p>
+    <div class="expected">
+      <div class="label">Expected result</div>
+      build-backend → passed<br>
+      build-frontend → passed<br>
+      verify-registry → passed
+    </div>
+
+    <h3>G4 — Find images in ghcr.io</h3>
+    <p>After the workflow passes: <strong>GitHub → your profile → Packages</strong>. You should see <code class="inline-code">shoplist-backend</code> and <code class="inline-code">shoplist-frontend</code>, each tagged with the 8-character commit SHA.</p>
+    <pre><code>git log --oneline -1
+# Example: a1b2c3d4 ci: add GitHub Actions workflow...
+# Image URLs:
+# ghcr.io/YOUR_GITHUB_USERNAME/shoplist-backend:a1b2c3d4
+# ghcr.io/YOUR_GITHUB_USERNAME/shoplist-frontend:a1b2c3d4</code></pre>
+
+    <h3>G5 — Update Kubernetes manifests</h3>
+    <p>Edit <code class="inline-code">kubernetes/backend-deployment.yml</code> and <code class="inline-code">kubernetes/frontend-deployment.yml</code>:</p>
+    <pre><code>image: ghcr.io/YOUR_GITHUB_USERNAME/shoplist-backend:YOUR_SHA
+imagePullPolicy: Always</code></pre>
+    <p>Replace <code class="inline-code">YOUR_GITHUB_USERNAME</code> (lowercase) and <code class="inline-code">YOUR_SHA</code> with the 8-character SHA from G4.</p>
+
+    <h3>G6 — Make packages public or create an imagePullSecret</h3>
+    <p>ghcr.io packages are private by default. Kubernetes needs credentials to pull them.</p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:0.75rem 0;">
+      <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:1rem;">
+        <p style="font-size:0.8rem;font-weight:700;color:#16a34a;margin-bottom:0.5rem;">Option A — Make public (easiest)</p>
+        <p style="font-size:0.875rem;color:#334155;">GitHub → Packages → select package → Package settings → Change visibility → Public. Repeat for both images. No Kubernetes credentials needed.</p>
+      </div>
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:1rem;">
+        <p style="font-size:0.8rem;font-weight:700;color:#1d4ed8;margin-bottom:0.5rem;">Option B — imagePullSecret</p>
+        <p style="font-size:0.875rem;color:#334155;">Create a GitHub personal access token (read:packages scope), then create a Kubernetes secret and add <code class="inline-code">imagePullSecrets:</code> to each deployment spec.</p>
+      </div>
+    </div>
+
+    <pre><code># Option B — create the pull secret
+kubectl create secret docker-registry ghcr-secret \
+  --docker-server=ghcr.io \
+  --docker-username=YOUR_GITHUB_USERNAME \
+  --docker-password=YOUR_PERSONAL_ACCESS_TOKEN \
+  -n shoplist</code></pre>
+
+    <h3>G7 — Apply and verify</h3>
+    <pre><code>kubectl apply -f kubernetes/backend-deployment.yml
+kubectl apply -f kubernetes/frontend-deployment.yml
+kubectl rollout status deployment/backend -n shoplist
+kubectl rollout status deployment/frontend -n shoplist
+kubectl describe pod -n shoplist -l app=backend | grep Image:</code></pre>
+    <div class="expected">
+      <div class="label">Expected</div>
+      Image: ghcr.io/[username]/shoplist-backend:[sha]<br>
+      deployment "backend" successfully rolled out
+    </div>
+
+    <h3>G8 — Troubleshooting</h3>
+    <table>
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td>Workflow not triggered</td><td>Push was to a non-main branch or unchanged paths</td><td>Use <strong>Actions → Run workflow</strong> (workflow_dispatch) to trigger manually</td></tr>
+        <tr><td>Push step: denied write</td><td>Workflow permissions not set to read/write</td><td>Settings → Actions → General → Workflow permissions → Read and write</td></tr>
+        <tr><td>Pod ImagePullBackOff</td><td>Package is private, no pull secret</td><td>Make package public (G6 Option A) or add imagePullSecret (G6 Option B)</td></tr>
+        <tr><td>Wrong SHORT_SHA</td><td><code>$GITHUB_SHA</code> is 40 chars, not 8</td><td>Confirm the Set short SHA step ran: check job log for <code>SHORT_SHA=</code> output</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<footer>Lecture 3 — CI/CD Pipelines &bull; ShopList DevOps Training &bull; Course Module Template v1.0</footer>
+</body>
+</html>
