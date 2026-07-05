@@ -1,9 +1,0 @@
-https://gitlab.com/rivky9505/public-final-devops-2026
-
-git clone https://gitlab.com/rivky9505/public-final-devops-2026.git
-
-cd .\public-final-devops-2026\
-
-code .
-
-
